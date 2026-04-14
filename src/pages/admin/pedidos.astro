@@ -1,0 +1,26 @@
+---
+/**
+ * admin/pedidos.astro – Gestión de pedidos / consultas recibidas
+ */
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import { createServerClient } from '@/lib/supabase';
+import OrderTable from '@/components/admin/OrderTable';
+
+const supabase = createServerClient(Astro.request, Astro.cookies);
+const { data: { user } } = await supabase.auth.getUser();
+
+const { data: pedidos } = await supabase
+  .from('pedidos')
+  .select(`
+    *,
+    pedido_items (*)
+  `)
+  .order('creado_en', { ascending: false });
+---
+
+<AdminLayout title="Pedidos · estiumsew" user={user!}>
+  <OrderTable
+    client:only="react"
+    initialOrders={pedidos ?? []}
+  />
+</AdminLayout>

@@ -1,0 +1,219 @@
+---
+/**
+ * admin/index.astro – Dashboard del panel de administración
+ * Muestra estadísticas rápidas: productos, pedidos, últimas consultas
+ */
+import AdminLayout from '@/layouts/AdminLayout.astro';
+import { createServerClient } from '@/lib/supabase';
+
+const supabase = createServerClient(Astro.request, Astro.cookies);
+const { data: { user } } = await supabase.auth.getUser();
+
+// Stats en paralelo
+const hoy = new Date(); hoy.setHours(0,0,0,0);
+const hace30 = new Date(hoy); hace30.setDate(hace30.getDate() - 30);
+
+const [
+  { count: totalProductos },
+  { count: totalPedidos },
+  { count: pendientes },
+  { data: recientes },
+  { count: visitasHoy },
+  { count: visitas30d },
+] = await Promise.all([
+  supabase.from('productos').select('*', { count: 'exact', head: true }),
+  supabase.from('pedidos').select('*', { count: 'exact', head: true }),
+  supabase.from('pedidos').select('*', { count: 'exact', head: true }).eq('estado', 'pendiente'),
+  supabase.from('pedidos')
+    .select('id, nombre_cliente, estado, creado_en')
+    .order('creado_en', { ascending: false })
+    .limit(5),
+  supabase.from('visitas').select('*', { count: 'exact', head: true })
+    .gte('creado_en', hoy.toISOString()),
+  supabase.from('visitas').select('*', { count: 'exact', head: true })
+    .gte('creado_en', hace30.toISOString()),
+]);
+
+const stats = [
+  { label: 'Productos activos', value: totalProductos ?? 0, icon: '✦', href: '/admin/productos' },
+  { label: 'Pedidos totales',   value: totalPedidos ?? 0,   icon: '◎', href: '/admin/pedidos' },
+  { label: 'Pendientes',        value: pendientes ?? 0,     icon: '⏳', href: '/admin/pedidos' },
+  { label: 'Visitas hoy',       value: visitasHoy ?? 0,     icon: '👁', href: '#' },
+  { label: 'Visitas 30 días',   value: visitas30d ?? 0,     icon: '📈', href: '#' },
+];
+
+function fmtDate(d: string) {
+  return new Intl.DateTimeFormat('es-ES', { day:'2-digit', month:'short' }).format(new Date(d));
+}
+const estadoColor: Record<string, string> = {
+  pendiente:  '#C9907A',
+  confirmado: '#8FA88A',
+  en_proceso: '#B5C4B1',
+  enviado:    '#90A8C9',
+  entregado:  '#A88A8F',
+  cancelado:  '#7A6A62',
+};
+---
+
+<AdminLayout title="Dashboard · estiumsew" user={user!}>
+  <div class="dash">
+
+    <!-- Bienvenida -->
+    <div class="dash-welcome">
+      <div>
+        <h1>Hola, {user?.user_metadata?.full_name?.split(' ')[0] ?? 'Fani'} 🫶🏼</h1>
+        <p>Aquí tienes un resumen de tu tienda</p>
+      </div>
+      <a href="/admin/productos" class="btn-new">+ Nuevo producto</a>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      {stats.map(s => (
+        <a href={s.href} class="stat-card">
+          <span class="stat-icon">{s.icon}</span>
+          <span class="stat-value">{s.value}</span>
+          <span class="stat-label">{s.label}</span>
+        </a>
+      ))}
+    </div>
+
+    <!-- Últimas consultas -->
+    <div class="dash-section">
+      <div class="dash-section-head">
+        <h2>Últimas consultas</h2>
+        <a href="/admin/pedidos">Ver todas →</a>
+      </div>
+
+      {(!recientes || recientes.length === 0) ? (
+        <p class="empty-msg">Aún no hay pedidos. Cuando lleguen aparecerán aquí.</p>
+      ) : (
+        <div class="recientes">
+          {recientes.map(p => (
+            <div class="reciente-row">
+              <div class="rec-avatar">
+                {p.nombre_cliente[0].toUpperCase()}
+              </div>
+              <div class="rec-info">
+                <p class="rec-name">{p.nombre_cliente}</p>
+                <p class="rec-date">{fmtDate(p.creado_en)}</p>
+              </div>
+              <span class="rec-estado" style={`color: ${estadoColor[p.estado] ?? '#7A6A62'}`}>
+                {p.estado}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+
+    <!-- Links rápidos -->
+    <div class="dash-section">
+      <h2>Acciones rápidas</h2>
+      <div class="quick-links">
+        <a href="/admin/productos" class="quick-link">
+          <span>✦</span>
+          <div>
+            <p>Gestionar productos</p>
+            <small>Añadir, editar o eliminar artículos</small>
+          </div>
+        </a>
+        <a href="/admin/pedidos" class="quick-link">
+          <span>◎</span>
+          <div>
+            <p>Ver pedidos</p>
+            <small>Gestiona consultas y estados</small>
+          </div>
+        </a>
+        <a href="/" target="_blank" class="quick-link">
+          <span>↗</span>
+          <div>
+            <p>Ver tienda pública</p>
+            <small>Cómo la ven tus clientes</small>
+          </div>
+        </a>
+        <a href="https://instagram.com/estiumsew" target="_blank" rel="noopener" class="quick-link">
+          <span>◈</span>
+          <div>
+            <p>Instagram</p>
+            <small>@estiumsew</small>
+          </div>
+        </a>
+      </div>
+    </div>
+
+  </div>
+</AdminLayout>
+
+<style>
+  .dash { display: flex; flex-direction: column; gap: 40px; }
+
+  .dash-welcome {
+    display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;
+  }
+  .dash-welcome h1 { font-family: 'Playfair Display',serif; font-size: 2rem; font-weight: 400; color: #f5ede8; }
+  .dash-welcome p  { font-size: .85rem; color: #a89890; margin-top: 4px; }
+  .btn-new {
+    background: #C9907A; color: #fff; border: none;
+    border-radius: 8px; padding: 10px 20px;
+    font-size: .82rem; font-weight: 500;
+    text-decoration: none; transition: background .2s;
+  }
+  .btn-new:hover { background: #A8705C; }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 16px; }
+  @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(3,1fr); } }
+  @media (max-width: 600px)  { .stats-grid { grid-template-columns: 1fr; } }
+  .stat-card {
+    background: #241e1a; border: 1px solid rgba(180,130,105,.2);
+    border-radius: 14px; padding: 24px 28px;
+    text-decoration: none; transition: border-color .2s;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .stat-card:hover { border-color: rgba(201,144,122,.5); }
+  .stat-icon  { font-size: 1.2rem; color: #C9907A; }
+  .stat-value { font-family: 'Playfair Display',serif; font-size: 2.5rem; color: #f5ede8; }
+  .stat-label { font-size: .75rem; color: #a89890; letter-spacing: .5px; }
+
+  /* Secciones */
+  .dash-section { background: #241e1a; border: 1px solid rgba(180,130,105,.2); border-radius: 14px; padding: 28px; }
+  .dash-section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .dash-section h2 { font-family: 'Playfair Display',serif; font-size: 1.2rem; font-weight: 400; color: #f5ede8; margin-bottom: 20px; }
+  .dash-section-head h2 { margin-bottom: 0; }
+  .dash-section-head a { font-size: .78rem; color: #C9907A; text-decoration: none; }
+  .empty-msg { font-size: .85rem; color: #7A6A62; text-align: center; padding: 20px 0; }
+
+  /* Recientes */
+  .recientes { display: flex; flex-direction: column; gap: 12px; }
+  .reciente-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 0; border-bottom: 1px solid rgba(180,130,105,.12);
+  }
+  .reciente-row:last-child { border-bottom: none; }
+  .rec-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(201,144,122,.2); color: #C9907A;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .9rem; font-weight: 600; flex-shrink: 0;
+  }
+  .rec-info { flex: 1; }
+  .rec-name { font-size: .85rem; font-weight: 500; color: #f5ede8; }
+  .rec-date { font-size: .72rem; color: #a89890; margin-top: 2px; }
+  .rec-estado { font-size: .72rem; font-weight: 500; text-transform: capitalize; }
+
+  /* Quick links */
+  .quick-links { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
+  @media (max-width: 600px) { .quick-links { grid-template-columns: 1fr; } }
+  .quick-link {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 18px;
+    background: rgba(255,255,255,.03); border: 1px solid rgba(180,130,105,.15);
+    border-radius: 10px; text-decoration: none;
+    transition: all .18s;
+  }
+  .quick-link:hover { border-color: rgba(201,144,122,.4); background: rgba(201,144,122,.06); }
+  .quick-link > span { font-size: 1.3rem; color: #C9907A; }
+  .quick-link p     { font-size: .83rem; font-weight: 500; color: #f5ede8; }
+  .quick-link small { font-size: .72rem; color: #a89890; margin-top: 2px; display: block; }
+</style>

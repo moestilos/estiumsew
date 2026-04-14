@@ -1,0 +1,335 @@
+---
+/**
+ * index.astro – Página principal / tienda pública
+ * Carga los productos desde Supabase en el servidor (SSR)
+ */
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Nav        from '@/components/layout/Nav.astro';
+import Footer     from '@/components/layout/Footer.astro';
+import ProductCard from '@/components/shop/ProductCard.astro';
+import { createServerClient } from '@/lib/supabase';
+import type { Producto } from '@/lib/types';
+
+// Obtener usuario y productos en el servidor
+const supabase = createServerClient(Astro.request, Astro.cookies);
+const { data: { user } } = await supabase.auth.getUser();
+
+const { data: productos } = await supabase
+  .from('productos')
+  .select('*')
+  .eq('activo', true)
+  .order('orden')
+  .order('creado_en');
+
+const items: Producto[] = productos ?? [];
+---
+
+<BaseLayout
+  title="estiumsew · Hecho a mano por Fani Mateos"
+  description="🫶🏼 Productos hechos a mano con máquina de coser · Pedidos personalizados · Entregas en Sevilla, Barcelona y Lleida"
+>
+  <Nav user={user} />
+
+  <!-- ─── HERO ──────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero-txt">
+      <p class="hero-pill">Hecho a mano en Sevilla 🫶🏼</p>
+      <h1>Cosido con <em>amor</em>,<br/>pensado para ti</h1>
+      <p class="hero-desc">
+        Bolsas, neceseres y accesorios únicos hechos a mano con máquina de coser.
+        Cada pieza es un proyecto personal, lleno de cariño y atención al detalle.
+      </p>
+      <div class="hero-actions">
+        <a href="#coleccion" class="btn btn-solid">Ver colección</a>
+        <a
+          href="https://wa.me/34695254187?text=Hola%20Fani!%20Me%20gustaría%20hacer%20un%20pedido%20personalizado"
+          target="_blank" rel="noopener"
+          class="btn btn-ghost"
+        >
+          Pedido personalizado
+        </a>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="hero-img-wrap">
+        <img src="/img/fanurricolor.png" alt="Fani Mateos · estiumsew" class="hero-photo" />
+      </div>
+
+      <div class="hero-tag">✦ Pedidos personalizados por MD</div>
+      <div class="hero-badge">
+        <span>Since</span>
+        <span>2024</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── SOBRE MÍ ─────────────────────────────────────────── -->
+  <section class="sobre reveal" id="sobre">
+    <div class="sobre-txt">
+      <p class="section-label">Sobre mí</p>
+      <h2 class="section-title">Hola, soy <em>Fani</em></h2>
+      <p>
+        Soy Fani Mateos, costurera sevillana apasionada por crear piezas únicas con
+        mi máquina de coser. Cada producto que hago lleva un trozo de mi corazón:
+        telas escogidas con mimo, costuras cuidadas y acabados que duran.
+      </p>
+      <p>
+        🫶🏼 Hecho a mano · 👛 Pedidos personalizados por MD<br/>
+        📍 Entregas en Sevilla, Barcelona y Lleida
+      </p>
+      <div class="tags-row">
+        <span class="tag rose">Máquina de coser</span>
+        <span class="tag sage">Materiales naturales</span>
+        <span class="tag">100% artesanal</span>
+        <span class="tag rose">Pedidos personalizados</span>
+      </div>
+    </div>
+
+    <div class="sobre-img">
+      <div class="sobre-img-inner">
+        <img src="/img/fanurricolor.png" alt="Fani Mateos cosiendo" style="width:100%;height:100%;object-fit:cover;" />
+      </div>
+      <div class="sobre-note">
+        <strong>@estiumsew</strong>
+        Sígueme en Instagram para ver las últimas creaciones
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── DIVIDER ──────────────────────────────────────────── -->
+  <div class="divider" aria-hidden="true">
+    <span class="divider-line"></span>
+    <span>✦ · ✦ · ✦</span>
+    <span class="divider-line"></span>
+  </div>
+
+  <!-- ─── COLECCIÓN ────────────────────────────────────────── -->
+  <section class="productos" id="coleccion">
+    <div class="productos-header">
+      <div>
+        <p class="section-label">Colección</p>
+        <h2 class="section-title">Mis <em>creaciones</em></h2>
+      </div>
+      <a
+        href="https://instagram.com/estiumsew"
+        target="_blank" rel="noopener"
+        class="link-sutil"
+      >
+        Ver más en Instagram →
+      </a>
+    </div>
+
+    {items.length === 0 ? (
+      <div class="productos-empty">
+        <p>Próximamente nuevos productos ✨</p>
+      </div>
+    ) : (
+      <div class="productos-grid">
+        {items.map(p => <ProductCard producto={p} />)}
+      </div>
+    )}
+  </section>
+
+  <!-- ─── PROCESO ──────────────────────────────────────────── -->
+  <section class="proceso reveal" id="proceso">
+    <div class="proceso-inner">
+      <div class="texto-centro">
+        <p class="section-label">Cómo funciona</p>
+        <h2 class="section-title">El <em>proceso</em></h2>
+      </div>
+      <div class="proceso-grid">
+        {[
+          { n:'01', icon:'💬', title:'Cuéntame qué buscas', desc:'Escríbeme por Instagram o WhatsApp con tu idea: colores, medidas, uso...' },
+          { n:'02', icon:'✂️', title:'Diseñamos juntas',   desc:'Elijo los materiales y te muestro cómo quedará antes de empezar.' },
+          { n:'03', icon:'🧵', title:'Coso con cariño',    desc:'Me pongo manos a la obra. Cada puntada va con toda la atención del mundo.' },
+          { n:'04', icon:'🎁', title:'Te lo hago llegar',  desc:'Te lo entrego en Sevilla o lo enviamos a Barcelona y Lleida.' },
+        ].map(paso => (
+          <div class="paso reveal">
+            <span class="paso-n">{paso.n}</span>
+            <div class="paso-icon">{paso.icon}</div>
+            <h4>{paso.title}</h4>
+            <p>{paso.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── CONTACTO ─────────────────────────────────────────── -->
+  <section class="contacto reveal" id="contacto">
+    <p class="section-label">¿Te gusta algo?</p>
+    <h2 class="section-title">Hablamos <em>🫶🏼</em></h2>
+    <p>
+      Escríbeme y cuéntame qué tienes en mente. Hago pedidos
+      personalizados y también envío a toda España.
+    </p>
+    <div class="contacto-btns">
+      <a
+        href="https://wa.me/34695254187?text=Hola%20Fani!%20Me%20gustaría%20hacer%20un%20pedido"
+        target="_blank" rel="noopener"
+        class="btn btn-wa"
+      >
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        WhatsApp · +34 695 25 41 87
+      </a>
+      <a
+        href="https://instagram.com/estiumsew"
+        target="_blank" rel="noopener"
+        class="btn btn-ghost"
+      >
+        Instagram @estiumsew
+      </a>
+    </div>
+  </section>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  /* ── Hero ──────────────────────────────────────────────── */
+  .hero {
+    min-height: 100vh;
+    display: grid; grid-template-columns: 1fr 1fr;
+    align-items: center;
+    max-width: 1200px; margin: 0 auto;
+    padding: 80px 52px 60px; gap: 60px;
+  }
+  .hero-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--cream2); border: 1px solid var(--linen);
+    border-radius: 40px; padding: 6px 16px;
+    font-size: .72rem; font-weight: 500; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--rose-d);
+    margin-bottom: 28px;
+    opacity: 0; animation: rise .7s .1s forwards;
+  }
+  .hero-pill::before { content:''; width: 6px; height: 6px; background: var(--rose); border-radius: 50%; }
+  .hero h1 {
+    font-family: 'Playfair Display', serif; font-weight: 400;
+    font-size: clamp(3rem, 6vw, 5.2rem); line-height: 1.08;
+    color: var(--txt); margin-bottom: 24px;
+    opacity: 0; animation: rise .8s .25s forwards;
+  }
+  .hero h1 em { font-style: italic; color: var(--rose); }
+  .hero-desc {
+    font-size: .95rem; line-height: 1.9; color: var(--txt-m);
+    max-width: 400px; margin-bottom: 40px;
+    opacity: 0; animation: rise .8s .4s forwards;
+  }
+  .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; opacity: 0; animation: rise .8s .55s forwards; }
+  .hero-visual { opacity: 0; animation: rise .9s .3s forwards; position: relative; }
+  .hero-img-wrap {
+    aspect-ratio: 4/5; background: var(--cream2);
+    border-radius: 16px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .hero-photo { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+  .hero-tag {
+    position: absolute; bottom: -14px; left: 28px;
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 40px; padding: 8px 20px;
+    font-size: .75rem; font-weight: 500; color: var(--txt-m);
+    box-shadow: 0 4px 20px rgba(0,0,0,.06);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .hero-badge {
+    position: absolute; top: 20px; right: -14px;
+    width: 80px; height: 80px;
+    background: var(--blush); border-radius: 50%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: .65rem; font-weight: 500; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--rose-d);
+    text-align: center; line-height: 1.4;
+    border: 4px solid var(--cream);
+  }
+
+  /* ── Sobre ─────────────────────────────────────────────── */
+  .sobre {
+    max-width: 1100px; margin: 80px auto;
+    padding: 0 52px;
+    display: grid; grid-template-columns: 1fr 1.1fr;
+    gap: 80px; align-items: center;
+  }
+  .sobre-txt .section-title { margin-bottom: 20px; }
+  .sobre-txt p { font-size: .93rem; line-height: 1.95; color: var(--txt-m); margin-bottom: 14px; }
+  .tags-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+  .sobre-img { position: relative; }
+  .sobre-img-inner {
+    aspect-ratio: 3/4; background: var(--cream2);
+    border-radius: 8px; border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .sobre-img::after {
+    content: ''; position: absolute;
+    bottom: -16px; right: -16px;
+    width: 60%; height: 60%;
+    border: 1.5px solid var(--linen); border-radius: 8px; z-index: -1;
+  }
+  .sobre-note {
+    position: absolute; bottom: 28px; left: -20px;
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px 20px;
+    font-size: .78rem; color: var(--txt-m);
+    box-shadow: 0 8px 28px rgba(0,0,0,.07);
+    max-width: 180px; line-height: 1.6;
+  }
+  .sobre-note strong { display: block; font-size: .85rem; color: var(--txt); font-weight: 500; margin-bottom: 2px; }
+
+  /* ── Productos ─────────────────────────────────────────── */
+  .productos { max-width: 1200px; margin: 80px auto; padding: 0 52px; }
+  .productos-header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 48px; flex-wrap: wrap; gap: 16px;
+  }
+  .link-sutil {
+    font-size: .78rem; font-weight: 500; letter-spacing: 1px;
+    color: var(--rose); text-decoration: none;
+    border-bottom: 1px solid rgba(201,144,122,.3);
+    padding-bottom: 1px; transition: border-color .2s;
+  }
+  .link-sutil:hover { border-color: var(--rose); }
+  .productos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .productos-empty {
+    text-align: center; padding: 80px 20px;
+    color: var(--txt-m); font-size: 1.1rem;
+  }
+
+  /* ── Proceso ───────────────────────────────────────────── */
+  .proceso { margin: 80px 0; background: var(--cream2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 80px 52px; }
+  .proceso-inner { max-width: 1100px; margin: 0 auto; }
+  .texto-centro { margin-bottom: 48px; }
+  .proceso-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 32px; margin-top: 48px; }
+  .paso { position: relative; padding-top: 16px; }
+  .paso-n { font-family: 'Playfair Display',serif; font-size: 3.5rem; color: var(--linen); line-height: 1; position: absolute; top: 0; left: 0; }
+  .paso-icon { font-size: 1.8rem; margin-bottom: 14px; position: relative; z-index: 1; }
+  .paso h4 { font-family: 'Playfair Display',serif; font-size: 1.05rem; font-weight: 400; margin-bottom: 8px; }
+  .paso p  { font-size: .82rem; color: var(--txt-m); line-height: 1.8; }
+
+  /* ── Contacto ──────────────────────────────────────────── */
+  .contacto { max-width: 680px; margin: 80px auto; padding: 0 52px; text-align: center; }
+  .contacto .section-title { margin: 14px 0 18px; }
+  .contacto p { font-size: .92rem; color: var(--txt-m); line-height: 1.9; margin-bottom: 36px; }
+  .contacto-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+  /* ── Responsive ────────────────────────────────────────── */
+  @media (max-width: 960px) {
+    .hero { grid-template-columns: 1fr; padding: 100px 28px 60px; gap: 40px; }
+    .hero-visual { order: -1; }
+    .sobre { grid-template-columns: 1fr; padding: 0 28px; gap: 40px; }
+    .sobre-img-inner { max-width: 340px; margin: 0 auto; }
+    .productos { padding: 0 28px; }
+    .productos-grid { grid-template-columns: repeat(2, 1fr); }
+    .proceso { padding: 60px 28px; }
+    .proceso-grid { grid-template-columns: repeat(2, 1fr); }
+    .contacto { padding: 0 28px; }
+  }
+  @media (max-width: 600px) {
+    .productos-grid { grid-template-columns: 1fr; }
+    .proceso-grid   { grid-template-columns: 1fr; }
+  }
+</style>

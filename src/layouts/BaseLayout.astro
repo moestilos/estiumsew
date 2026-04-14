@@ -1,0 +1,136 @@
+---
+/**
+ * BaseLayout – Layout raíz de la tienda pública
+ * Incluye: meta tags, fuentes, canvas de fondo animado, partículas
+ */
+interface Props {
+  title?: string;
+  description?: string;
+  ogImage?: string;
+}
+
+const {
+  title = 'estiumsew · Fani Mateos',
+  description = '🫶🏼 Productos hechos a mano con máquina de coser · Pedidos personalizados · Entregas en Sevilla, Barcelona y Lleida',
+  ogImage = '/og-image.jpg',
+} = Astro.props;
+---
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="referrer" content="no-referrer" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+
+  <!-- Open Graph -->
+  <meta property="og:title"       content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image"       content={ogImage} />
+  <meta property="og:type"        content="website" />
+  <meta name="twitter:card"       content="summary_large_image" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <!-- Fuentes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&display=swap"
+    rel="stylesheet"
+  />
+</head>
+<body>
+  <!-- Fondo: blobs suaves -->
+  <canvas id="bg-canvas"></canvas>
+  <div class="bg-stitch"></div>
+
+  <div class="wrap">
+    <slot />
+  </div>
+
+  <!-- Canvas animado: blobs pastel suaves, sin parpadeos -->
+  <script>
+    (() => {
+      const canvas = document.getElementById('bg-canvas') as HTMLCanvasElement;
+      const ctx    = canvas.getContext('2d')!;
+
+      // Velocidades muy bajas y desplazamientos mínimos → sin parpadeos
+      const blobs = [
+        { x: .15, y: .25, r: .42, color: 'rgba(232,196,184,', speed: .00008, phase: 0   },
+        { x: .82, y: .18, r: .35, color: 'rgba(181,196,177,', speed: .00006, phase: 1.2 },
+        { x: .5,  y: .65, r: .48, color: 'rgba(221,211,199,', speed: .00007, phase: 2.4 },
+        { x: .12, y: .78, r: .30, color: 'rgba(201,144,122,', speed: .00005, phase: 0.8 },
+        { x: .85, y: .72, r: .34, color: 'rgba(181,196,177,', speed: .00006, phase: 3.6 },
+      ];
+
+      let W = 0, H = 0;
+
+      function resize() {
+        W = canvas.width  = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+      }
+
+      function draw(ts: number) {
+        ctx.clearRect(0, 0, W, H);
+        for (const b of blobs) {
+          // Movimiento muy lento y suave
+          const ox = Math.sin(ts * b.speed + b.phase) * 0.025;
+          const oy = Math.cos(ts * b.speed * 0.8 + b.phase) * 0.02;
+          const cx = (b.x + ox) * W;
+          const cy = (b.y + oy) * H;
+          const r  = b.r * Math.min(W, H);
+          const g  = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+          g.addColorStop(0,   b.color + '.13)');
+          g.addColorStop(.5,  b.color + '.06)');
+          g.addColorStop(1,   b.color + '0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Throttle a ~20fps para evitar cualquier parpadeo
+      let last = 0;
+      function loop(ts: number) {
+        if (ts - last > 50) { draw(ts); last = ts; }
+        requestAnimationFrame(loop);
+      }
+
+      window.addEventListener('resize', resize);
+      resize();
+      requestAnimationFrame(loop);
+    })();
+  </script>
+
+  <!-- Tracker de visitas (solo en tienda pública, no en admin) -->
+  <script>
+    fetch('/api/visita', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pagina: window.location.pathname }),
+    }).catch(() => {});
+  </script>
+
+  <!-- Scroll reveal -->
+  <script>
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+      }),
+      { threshold: 0.12 }
+    );
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  </script>
+</body>
+</html>
+
+<style is:global>
+  @import '../styles/global.css';
+</style>

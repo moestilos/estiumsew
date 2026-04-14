@@ -1,0 +1,135 @@
+/* ─────────────────────────────────────────────────────────────
+   ESTILOS GLOBALES · estiumsew · Fani Mateos
+   ───────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&display=swap');
+
+/* ── Variables ─────────────────────────────────────────────── */
+:root {
+  --cream:   #FAF7F2;
+  --cream2:  #F3EDE4;
+  --blush:   #E8C4B8;
+  --rose:    #C9907A;
+  --rose-d:  #A8705C;
+  --sage:    #B5C4B1;
+  --sage-d:  #8FA88A;
+  --linen:   #DDD3C7;
+  --txt:     #2E2520;
+  --txt-m:   #7A6A62;
+  --txt-l:   #A89990;
+  --white:   #FFFFFF;
+  --border:  rgba(180,130,105,.32);
+
+  /* Admin */
+  --admin-bg:      #1a1512;
+  --admin-surface: #241e1a;
+  --admin-border:  rgba(180,130,105,.2);
+  --admin-txt:     #f5ede8;
+  --admin-txt-m:   #a89890;
+}
+
+/* ── Reset ─────────────────────────────────────────────────── */
+*, *::before, *::after {
+  margin: 0; padding: 0; box-sizing: border-box;
+}
+html { scroll-behavior: smooth; }
+img  { display: block; width: 100%; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
+  background: var(--cream);
+  color: var(--txt);
+  overflow-x: hidden;
+}
+
+/* ── Patrón de tela estático (sin animación) ───────────────── */
+.bg-stitch {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    repeating-linear-gradient(-45deg,
+      transparent 0, transparent 18px,
+      rgba(180,120,100,.04) 18px, rgba(180,120,100,.04) 19px),
+    repeating-linear-gradient(45deg,
+      transparent 0, transparent 18px,
+      rgba(130,160,125,.03) 18px, rgba(130,160,125,.03) 19px);
+  background-size: 56px 56px;
+  /* Sin animación: solo textura estática suave */
+}
+
+/* ── Canvas de fondo (debe ser fixed para no ocupar espacio) ── */
+#bg-canvas {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  width: 100% !important; height: 100% !important;
+}
+
+/* ── Wrapper ───────────────────────────────────────────────── */
+.wrap { position: relative; z-index: 1; }
+
+/* ── Animaciones de entrada ────────────────────────────────── */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.reveal {
+  opacity: 0; transform: translateY(24px);
+  transition: opacity .65s ease, transform .65s ease;
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+.reveal-d1 { transition-delay: .08s; }
+.reveal-d2 { transition-delay: .16s; }
+.reveal-d3 { transition-delay: .24s; }
+.reveal-d4 { transition-delay: .32s; }
+
+/* ── Botones ───────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 13px 28px;
+  border-radius: 40px;
+  font-size: .82rem; font-weight: 500; letter-spacing: .5px;
+  text-decoration: none;
+  transition: all .22s;
+  border: none; cursor: pointer;
+}
+.btn-solid  { background: var(--rose); color: #fff; }
+.btn-solid:hover { background: var(--rose-d); transform: translateY(-2px); }
+.btn-ghost  { background: transparent; border: 1.5px solid var(--linen); color: var(--txt-m); }
+.btn-ghost:hover { border-color: var(--rose); color: var(--rose); transform: translateY(-2px); }
+.btn-wa     { background: #25D366; color: #fff; }
+.btn-wa:hover { background: #1fb355; transform: translateY(-2px); }
+.btn-wa svg { width: 18px; height: 18px; fill: #fff; }
+
+/* ── Etiquetas de sección ──────────────────────────────────── */
+.section-label {
+  font-size: .7rem; font-weight: 500; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--rose); margin-bottom: 12px;
+}
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 400; font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.15; color: var(--txt);
+}
+.section-title em { font-style: italic; color: var(--rose); }
+
+/* ── Tags ──────────────────────────────────────────────────── */
+.tag {
+  background: var(--cream2); border: 1px solid var(--linen);
+  border-radius: 40px; padding: 6px 16px;
+  font-size: .75rem; font-weight: 500; color: var(--txt-m);
+}
+.tag.rose { background: rgba(232,196,184,.3); border-color: var(--blush); color: var(--rose-d); }
+.tag.sage { background: rgba(181,196,177,.25); border-color: var(--sage); color: var(--sage-d); }
+
+/* ── Divider ───────────────────────────────────────────────── */
+.divider {
+  display: flex; align-items: center; gap: 16px;
+  max-width: 1100px; margin: 0 auto; padding: 0 52px;
+  color: var(--linen); font-size: .75rem; letter-spacing: 3px;
+}
+.divider-line { flex: 1; height: 1px; background: var(--border); }
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .divider { padding: 0 28px; }
+}

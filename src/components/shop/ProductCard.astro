@@ -1,0 +1,141 @@
+---
+/**
+ * ProductCard – Tarjeta de producto individual
+ * Soporta modo "wide" (span 2 columnas) y placeholder SVG si no hay imagen
+ */
+import type { Producto } from '@/lib/types';
+
+interface Props { producto: Producto }
+const { producto } = Astro.props;
+
+// Paletas de placeholder según categoría
+const paletas: Record<string, [string, string, string]> = {
+  'Bolsas':     ['#F3EDE4', '#E8C4B8', '👜'],
+  'Neceseres':  ['#EDF3EA', '#B5C4B1', '🧴'],
+  'Fundas':     ['#EAF0F3', '#B1C4C9', '💻'],
+  'Sets':       ['#F3EEF0', '#C4B1C9', '🎁'],
+  'Cocina':     ['#F3F1EA', '#C9C4B1', '🧺'],
+  'Accesorios': ['#F3EAF0', '#C9B1C4', '🌸'],
+};
+const [c1, c2, emoji] = paletas[producto.categoria] ?? ['#F3EDE4', '#E8C4B8', '🧵'];
+---
+
+<article class:list={['card', { 'card-wide': producto.wide }]}>
+  <div class="card-img">
+    {producto.imagen_url
+      ? <img src={producto.imagen_url} alt={producto.nombre} loading="lazy" />
+      : (
+        <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id={`g-${producto.id}`} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%"   stop-color={c1}/>
+              <stop offset="100%" stop-color={c2}/>
+            </linearGradient>
+          </defs>
+          <rect fill={`url(#g-${producto.id})`} width="400" height="400"/>
+          <!-- Trama de tela -->
+          <path d="M0 20 L400 20 M0 40 L400 40 M0 60 L400 60 M0 80 L400 80" stroke="rgba(180,130,105,.06)" stroke-width="1"/>
+          <path d="M20 0 L20 400 M40 0 L40 400 M60 0 L60 400 M80 0 L80 400" stroke="rgba(180,130,105,.06)" stroke-width="1"/>
+          <text x="200" y="230" text-anchor="middle" font-size="90" font-family="serif">{emoji}</text>
+        </svg>
+      )
+    }
+    <span class="badge-pop">Hecho a mano</span>
+  </div>
+
+  <div class="card-body">
+    <p class="card-cat">{producto.categoria}</p>
+    <h3 class="card-name">{producto.nombre}</h3>
+    <p class="card-desc">{producto.descripcion}</p>
+    <div class="card-bottom">
+      <span class="card-price">{producto.precio}</span>
+      <a
+        href={`https://wa.me/34695254187?text=${encodeURIComponent(`Hola Fani! Me interesa: ${producto.nombre}`)}`}
+        target="_blank"
+        rel="noopener"
+        class="card-cta"
+      >
+        Pedir
+        <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</article>
+
+<style>
+  .card {
+    background: var(--white);
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    overflow: hidden;
+    transition: box-shadow .25s, transform .25s;
+    position: relative;
+  }
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 16px 40px rgba(0,0,0,.09);
+    border-color: rgba(180,130,105,.52);
+  }
+
+  .card-wide { grid-column: span 2; }
+
+  .card-img {
+    aspect-ratio: 1/1;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 5rem; position: relative; overflow: hidden;
+    background: var(--cream2);
+  }
+  .card-wide .card-img { aspect-ratio: 2/1; }
+
+  .card-img img {
+    width: 100%; height: 100%;
+    object-fit: cover; position: absolute; inset: 0;
+    transition: transform .5s ease;
+  }
+  .card:hover .card-img img { transform: scale(1.04); }
+
+  .card-img svg { width: 100%; height: 100%; }
+
+  .badge-pop {
+    position: absolute; top: 14px; left: 14px;
+    background: rgba(255,255,255,.85);
+    backdrop-filter: blur(8px);
+    border-radius: 40px;
+    padding: 4px 12px;
+    font-size: .64rem; font-weight: 500; letter-spacing: 1px;
+    color: var(--rose-d); text-transform: uppercase;
+    border: 1px solid rgba(201,144,122,.2);
+  }
+
+  .card-body { padding: 20px 22px 22px; }
+
+  .card-cat {
+    font-size: .68rem; font-weight: 500; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--txt-l); margin-bottom: 6px;
+  }
+  .card-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem; font-weight: 400;
+    color: var(--txt); margin-bottom: 6px;
+  }
+  .card-desc {
+    font-size: .8rem; color: var(--txt-l);
+    line-height: 1.6; margin-bottom: 18px;
+  }
+  .card-bottom {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-price {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem; color: var(--rose-d);
+  }
+  .card-cta {
+    font-size: .75rem; font-weight: 500;
+    color: var(--rose); text-decoration: none;
+    display: flex; align-items: center; gap: 4px;
+    transition: gap .2s;
+  }
+  .card-cta:hover { gap: 8px; }
+</style>

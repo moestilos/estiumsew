@@ -34,16 +34,22 @@ const {
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-
-  <!-- Fuentes -->
+  <!-- Fuentes: preconnect + preload del CSS para evitar FOUT -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
+    rel="preload" as="style"
     href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&display=swap"
-    rel="stylesheet"
+    onload="this.rel='stylesheet'"
   />
+  <noscript>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+  </noscript>
+  <!-- Hint de navegación para recursos críticos -->
+  <meta http-equiv="x-dns-prefetch-control" content="on" />
 </head>
 <body>
   <!-- Fondo: blobs suaves -->
@@ -57,38 +63,243 @@ const {
     <slot />
   </div>
 
-  <!-- Canvas animado: blobs pastel suaves, sin parpadeos -->
+  <!-- Canvas animado: blobs orgánicos con shimmer de partículas -->
   <script>
     (() => {
       const canvas = document.getElementById('bg-canvas') as HTMLCanvasElement;
       const ctx    = canvas.getContext('2d')!;
 
-      const blobs = [
-        { x: .15, y: .25, r: .42, color: 'rgba(232,196,184,', speed: .00008, phase: 0   },
-        { x: .82, y: .18, r: .35, color: 'rgba(181,196,177,', speed: .00006, phase: 1.2 },
-        { x: .5,  y: .65, r: .48, color: 'rgba(221,211,199,', speed: .00007, phase: 2.4 },
-        { x: .12, y: .78, r: .30, color: 'rgba(201,144,122,', speed: .00005, phase: 0.8 },
-        { x: .85, y: .72, r: .34, color: 'rgba(181,196,177,', speed: .00006, phase: 3.6 },
+      // ── Colores de marca ─────────────────────────────────────
+      const THREAD_COLORS = [
+        '201,144,122',   // rose
+        '181,196,177',   // sage
+        '180,130,105',   // blush-d
+        '221,211,199',   // linen
+        '168,112, 92',   // rose-d
       ];
 
-      let W = 0, H = 0;
+      // ── Blobs de fondo suaves ────────────────────────────────
+      const blobs = [
+        { x: .12, y: .22, r: .50, color: 'rgba(232,196,184,', speed: .000055, phase: 0,   amp: .028 },
+        { x: .80, y: .15, r: .42, color: 'rgba(181,196,177,', speed: .000040, phase: 1.4, amp: .024 },
+        { x: .50, y: .62, r: .52, color: 'rgba(221,211,199,', speed: .000048, phase: 2.6, amp: .022 },
+        { x: .10, y: .80, r: .36, color: 'rgba(201,144,122,', speed: .000035, phase: 0.9, amp: .018 },
+        { x: .88, y: .75, r: .40, color: 'rgba(181,196,177,', speed: .000042, phase: 3.8, amp: .026 },
+        { x: .40, y: .08, r: .28, color: 'rgba(232,196,184,', speed: .000060, phase: 5.1, amp: .016 },
+      ];
 
-      function resize() {
-        W = canvas.width  = window.innerWidth;
-        H = canvas.height = window.innerHeight;
+      // ── Tipos de hilo ────────────────────────────────────────
+      interface Pt { x: number; y: number; }
+      interface Thread {
+        p0: Pt; p1: Pt; p2: Pt; p3: Pt;   // puntos de bezier cúbica
+        color: string;
+        lw: number;                          // grosor
+        maxAlpha: number;
+        alpha: number;
+        progress: number;                    // 0 → 1 (cuánto se ha dibujado)
+        spd: number;                         // velocidad de progreso
+        stitches: boolean;                   // si lleva puntos de costura
+        stitchLen: number;                   // tamaño de las marcas
+        stitchGap: number;                   // cada cuántos px poner un punto
+        phase: 'in' | 'draw' | 'out';
+        fadeT: number;                       // 0→1 para fade in/out
+        fadeDur: number;
+        done: boolean;
       }
 
-      function draw(ts: number) {
-        ctx.clearRect(0, 0, W, H);
+      const THREAD_COUNT = 6;   // hilos simultáneos
+      const threads: Thread[] = [];
+      let W = 0, H = 0;
+
+      // ── Bezier helpers ───────────────────────────────────────
+      function bezPt(p0: Pt, p1: Pt, p2: Pt, p3: Pt, t: number): Pt {
+        const mt = 1 - t;
+        return {
+          x: mt*mt*mt*p0.x + 3*mt*mt*t*p1.x + 3*mt*t*t*p2.x + t*t*t*p3.x,
+          y: mt*mt*mt*p0.y + 3*mt*mt*t*p1.y + 3*mt*t*t*p2.y + t*t*t*p3.y,
+        };
+      }
+
+      // Tangente normalizada — para orientar las marcas de costura
+      function bezTan(p0: Pt, p1: Pt, p2: Pt, p3: Pt, t: number): Pt {
+        const mt = 1 - t;
+        const tx = 3*(mt*mt*(p1.x-p0.x) + 2*mt*t*(p2.x-p1.x) + t*t*(p3.x-p2.x));
+        const ty = 3*(mt*mt*(p1.y-p0.y) + 2*mt*t*(p2.y-p1.y) + t*t*(p3.y-p2.y));
+        const len = Math.sqrt(tx*tx + ty*ty) || 1;
+        return { x: tx/len, y: ty/len };
+      }
+
+      // ── Spawner ──────────────────────────────────────────────
+      function edgePt(): Pt {
+        // Punto aleatorio en uno de los 4 bordes
+        const side = Math.floor(Math.random() * 4);
+        if (side === 0) return { x: Math.random() * W, y: -10 };
+        if (side === 1) return { x: W + 10, y: Math.random() * H };
+        if (side === 2) return { x: Math.random() * W, y: H + 10 };
+        return { x: -10, y: Math.random() * H };
+      }
+
+      function spawnThread(): Thread {
+        const p0 = edgePt();
+        const p3 = edgePt();
+
+        // Puntos de control: S-curve suave con algo de variación
+        const mx = (p0.x + p3.x) / 2;
+        const my = (p0.y + p3.y) / 2;
+        const perp = { x: -(p3.y - p0.y), y: p3.x - p0.x };
+        const plen = Math.sqrt(perp.x*perp.x + perp.y*perp.y) || 1;
+        const bow1 = (Math.random() * .35 + .1) * Math.min(W, H) * (Math.random() < .5 ? 1 : -1);
+        const bow2 = (Math.random() * .35 + .1) * Math.min(W, H) * (Math.random() < .5 ? 1 : -1);
+
+        const p1: Pt = {
+          x: p0.x + (mx - p0.x) * .5 + (perp.x / plen) * bow1,
+          y: p0.y + (my - p0.y) * .5 + (perp.y / plen) * bow1,
+        };
+        const p2: Pt = {
+          x: p3.x - (p3.x - mx) * .5 + (perp.x / plen) * bow2,
+          y: p3.y - (p3.y - my) * .5 + (perp.y / plen) * bow2,
+        };
+
+        const col   = THREAD_COLORS[Math.floor(Math.random() * THREAD_COLORS.length)];
+        const thick = Math.random() < .3;   // 30% hilos gruesos → costura principal
+        const maxA  = thick ? (Math.random() * .07 + .08) : (Math.random() * .05 + .03);
+
+        return {
+          p0, p1, p2, p3,
+          color:     col,
+          lw:        thick ? Math.random() * .5 + 0.9 : Math.random() * .4 + 0.4,
+          maxAlpha:  maxA,
+          alpha:     0,
+          progress:  0,
+          spd:       Math.random() * .0015 + .0006,
+          stitches:  thick,
+          stitchLen: thick ? Math.random() * 4 + 5 : 3,
+          stitchGap: thick ? Math.random() * 18 + 22 : 30,
+          phase:     'in',
+          fadeT:     0,
+          fadeDur:   Math.random() * 60 + 40,   // frames para fade in/out
+          done:      false,
+        };
+      }
+
+      // ── Dibujar un hilo (hasta su progress actual) ───────────
+      function drawThread(th: Thread) {
+        if (th.alpha < .002) return;
+        const STEPS = 120;   // resolución de la curva
+        const maxStep = Math.floor(th.progress * STEPS);
+        if (maxStep < 1) return;
+
+        // Línea del hilo
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(${th.color},${th.alpha})`;
+        ctx.lineWidth   = th.lw;
+        ctx.lineCap     = 'round';
+        ctx.lineJoin    = 'round';
+
+        const pt0 = bezPt(th.p0, th.p1, th.p2, th.p3, 0);
+        ctx.moveTo(pt0.x, pt0.y);
+
+        // Acumular longitud para marcas de costura
+        let stitchAcc = 0;
+        let prevPt    = pt0;
+
+        for (let i = 1; i <= maxStep; i++) {
+          const t  = i / STEPS;
+          const pt = bezPt(th.p0, th.p1, th.p2, th.p3, t);
+          ctx.lineTo(pt.x, pt.y);
+
+          if (th.stitches) {
+            const dx = pt.x - prevPt.x;
+            const dy = pt.y - prevPt.y;
+            stitchAcc += Math.sqrt(dx*dx + dy*dy);
+            prevPt = pt;
+          }
+        }
+        ctx.stroke();
+
+        // Marcas perpendiculares de costura (punto de máquina)
+        if (th.stitches) {
+          const stitchAlpha = th.alpha * .75;
+          ctx.strokeStyle = `rgba(${th.color},${stitchAlpha})`;
+          ctx.lineWidth   = th.lw * .7;
+
+          let distAcc = 0;
+          let prevP   = bezPt(th.p0, th.p1, th.p2, th.p3, 0);
+          let nextMark = th.stitchGap * .5;   // primer punto a mitad del gap
+
+          for (let i = 1; i <= maxStep; i++) {
+            const t  = i / STEPS;
+            const pt = bezPt(th.p0, th.p1, th.p2, th.p3, t);
+            const dx = pt.x - prevP.x;
+            const dy = pt.y - prevP.y;
+            distAcc += Math.sqrt(dx*dx + dy*dy);
+
+            while (distAcc >= nextMark) {
+              // Interpolar posición exacta de la marca
+              const frac = 1 - (distAcc - nextMark) / Math.sqrt(dx*dx + dy*dy + .001);
+              const mx   = prevP.x + (pt.x - prevP.x) * frac;
+              const my   = prevP.y + (pt.y - prevP.y) * frac;
+              const tan  = bezTan(th.p0, th.p1, th.p2, th.p3, t);
+              const half = th.stitchLen / 2;
+
+              ctx.beginPath();
+              ctx.moveTo(mx - tan.y * half, my + tan.x * half);
+              ctx.lineTo(mx + tan.y * half, my - tan.x * half);
+              ctx.stroke();
+
+              nextMark += th.stitchGap;
+            }
+            prevP = pt;
+          }
+        }
+
+        // Cabeza del hilo: nodo pequeño al frente
+        if (th.progress < .99 && th.progress > .01) {
+          const tipT  = th.progress;
+          const tip   = bezPt(th.p0, th.p1, th.p2, th.p3, tipT);
+          const nodeR = th.lw * 1.8;
+          ctx.beginPath();
+          ctx.arc(tip.x, tip.y, nodeR, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${th.color},${th.alpha * .9})`;
+          ctx.fill();
+        }
+      }
+
+      // ── Update del ciclo de vida ─────────────────────────────
+      function updateThread(th: Thread) {
+        if (th.done) return;
+
+        if (th.phase === 'in') {
+          th.fadeT += 1 / th.fadeDur;
+          th.alpha  = th.maxAlpha * Math.min(th.fadeT, 1);
+          th.progress += th.spd;
+          if (th.fadeT >= 1) th.phase = 'draw';
+          if (th.progress >= 1) { th.progress = 1; th.phase = 'out'; th.fadeT = 0; }
+        } else if (th.phase === 'draw') {
+          th.progress += th.spd;
+          if (th.progress >= 1) { th.progress = 1; th.phase = 'out'; th.fadeT = 0; }
+        } else {
+          // 'out': esperar un poco y luego desvanecer
+          th.fadeT += 1 / th.fadeDur;
+          if (th.fadeT > .3) {
+            th.alpha = th.maxAlpha * Math.max(0, 1 - (th.fadeT - .3) / .7);
+          }
+          if (th.fadeT >= 1) th.done = true;
+        }
+      }
+
+      // ── Blobs ────────────────────────────────────────────────
+      function drawBlobs(ts: number) {
         for (const b of blobs) {
-          const ox = Math.sin(ts * b.speed + b.phase) * 0.025;
-          const oy = Math.cos(ts * b.speed * 0.8 + b.phase) * 0.02;
+          const ox = Math.sin(ts * b.speed + b.phase) * b.amp;
+          const oy = Math.cos(ts * b.speed * .75 + b.phase) * b.amp * .85;
           const cx = (b.x + ox) * W;
           const cy = (b.y + oy) * H;
           const r  = b.r * Math.min(W, H);
           const g  = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-          g.addColorStop(0,   b.color + '.13)');
-          g.addColorStop(.5,  b.color + '.06)');
+          g.addColorStop(0,   b.color + '.14)');
+          g.addColorStop(.45, b.color + '.07)');
+          g.addColorStop(.8,  b.color + '.02)');
           g.addColorStop(1,   b.color + '0)');
           ctx.fillStyle = g;
           ctx.beginPath();
@@ -97,14 +308,51 @@ const {
         }
       }
 
+      // ── Resize ───────────────────────────────────────────────
+      function resize() {
+        W = canvas.width  = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+      }
+
+      // ── Inicializar hilos con offsets de tiempo ──────────────
+      function initThreads() {
+        threads.length = 0;
+        for (let i = 0; i < THREAD_COUNT; i++) {
+          const th = spawnThread();
+          // Arrancar en diferentes puntos del ciclo para que no entren todos a la vez
+          th.progress = Math.random() * .8;
+          th.phase    = 'draw';
+          th.alpha    = th.maxAlpha * (Math.random() * .6 + .4);
+          threads.push(th);
+        }
+      }
+
+      // ── Loop principal ───────────────────────────────────────
       let last = 0;
       function loop(ts: number) {
-        if (ts - last > 50) { draw(ts); last = ts; }
+        // ~30 fps para ahorro de batería
+        if (ts - last > 33) {
+          ctx.clearRect(0, 0, W, H);
+
+          // Capa 1: blobs
+          drawBlobs(ts);
+
+          // Capa 2: hilos
+          for (let i = threads.length - 1; i >= 0; i--) {
+            updateThread(threads[i]);
+            drawThread(threads[i]);
+            // Reemplazar hilo terminado
+            if (threads[i].done) threads[i] = spawnThread();
+          }
+
+          last = ts;
+        }
         requestAnimationFrame(loop);
       }
 
-      window.addEventListener('resize', resize);
+      window.addEventListener('resize', resize, { passive: true });
       resize();
+      initThreads();
       requestAnimationFrame(loop);
     })();
   </script>
@@ -132,7 +380,8 @@ const {
         const href = a.getAttribute('href');
         if (!href) return;
         // Solo links internos que no sean anclas ni externos
-        if (href.startsWith('http') || href.startsWith('#') || href.startsWith('/admin') || href.startsWith('/login')) return;
+        // Saltar links externos, anclas, admin, login y links del tipo /#ancla
+        if (href.startsWith('http') || href.startsWith('#') || href.startsWith('/#') || href.startsWith('/admin') || href.startsWith('/login')) return;
         if (a.target === '_blank') return;
 
         e.preventDefault();

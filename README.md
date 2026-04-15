@@ -1,131 +1,82 @@
-# estiumsew · Tienda de Fani
+# estiumsew
 
-Tienda artesanal online para [@estiumsew](https://instagram.com/estiumsew) — costura a mano desde Sevilla, España.
+> Tienda artesanal online para [@estiumsew](https://instagram.com/estiumsew) — costura hecha a mano desde Sevilla, España.
 
-Construida con **Astro SSR**, **Supabase** (auth + base de datos + storage) y desplegada en **Netlify**.
-
----
-
-## Tecnologías
-
-| Capa | Herramienta |
-|---|---|
-| Framework | [Astro](https://astro.build) con SSR (`output: 'server'`) |
-| UI interactiva | React (`@astrojs/react`) |
-| Auth | Supabase Auth con Google OAuth |
-| Base de datos | Supabase (PostgreSQL) |
-| Imágenes | Supabase Storage |
-| Hosting | Netlify |
+Diseñada para mostrar y vender productos artesanales únicos, con un panel de administración privado para gestionar el catálogo y los pedidos.
 
 ---
 
-## Puesta en marcha
+## Stack
 
-### 1. Crear proyecto en Supabase
+| Capa | Tecnología |
+|------|-----------|
+| Framework | [Astro](https://astro.build) SSR (`output: 'server'`) |
+| Componentes interactivos | React (`@astrojs/react`) |
+| Autenticación | Supabase Auth + Google OAuth (PKCE) |
+| Base de datos | Supabase (PostgreSQL + RLS) |
+| Almacenamiento de imágenes | Supabase Storage |
+| Despliegue | Netlify (con adaptador `@astrojs/netlify`) |
 
-1. Ve a [supabase.com](https://supabase.com) y crea un proyecto nuevo.
-2. Guarda la **URL** y la **anon key** del proyecto (las encontrarás en *Settings → API*).
-3. Copia también la **service_role key** (en el mismo sitio, un poco más abajo).
+---
 
-### 2. Ejecutar el esquema SQL
+## Arquitectura de seguridad
 
-En el **SQL Editor** de Supabase, ejecuta en orden:
+- Las rutas `/admin/*` y `/api/admin/*` están protegidas por middleware Astro.
+- Las mutaciones de datos usan un cliente `service_role` en el servidor, nunca en el cliente.
+- El cliente del navegador usa únicamente la clave `anon` y está sujeto a las políticas RLS de Supabase.
 
-```bash
-# Primero el esquema (tablas, RLS, triggers, storage)
-supabase/schema.sql
+---
 
-# Luego los datos de ejemplo (opcional pero recomendado)
-supabase/seed.sql
-```
+## Puesta en marcha local
 
-Puedes copiar y pegar el contenido directamente en el editor SQL del dashboard.
+### 1. Variables de entorno
 
-### 3. Configurar Google OAuth
-
-1. Ve a [console.cloud.google.com](https://console.cloud.google.com).
-2. Crea un proyecto → *APIs & Services → Credentials → Create OAuth 2.0 Client ID*.
-3. En *Authorized redirect URIs* añade:
-   ```
-   https://<tu-proyecto>.supabase.co/auth/v1/callback
-   ```
-4. Copia el **Client ID** y **Client Secret**.
-5. En Supabase: *Authentication → Providers → Google* → pega las credenciales y activa el provider.
-
-### 4. Variables de entorno
-
-Crea un archivo `.env` en la raíz del proyecto (copia `.env.example`):
+Crea un `.env` en la raíz (copia `.env.example`):
 
 ```env
-PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
-PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+PUBLIC_SUPABASE_URL=https://<proyecto>.supabase.co
+PUBLIC_SUPABASE_ANON_KEY=<anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 PUBLIC_SITE_URL=http://localhost:4321
 ```
 
-> ⚠️ Nunca subas el `.env` a Git. Está incluido en `.gitignore`.
+> Nunca subas `.env` a Git — está en `.gitignore`.
 
-### 5. Instalar dependencias y arrancar en local
+### 2. Base de datos
+
+En el **SQL Editor** de Supabase, ejecuta en orden:
+
+```
+supabase/schema.sql   — tablas, RLS, triggers y bucket de storage
+supabase/seed.sql     — datos de ejemplo (opcional)
+```
+
+### 3. Google OAuth
+
+1. [console.cloud.google.com](https://console.cloud.google.com) → *APIs & Services → Credentials → Create OAuth 2.0 Client ID*
+2. Authorized redirect URI: `https://<proyecto>.supabase.co/auth/v1/callback`
+3. En Supabase: *Authentication → Providers → Google* → pega Client ID y Secret
+
+### 4. Instalar y arrancar
 
 ```bash
 npm install
 npm run dev
+# → http://localhost:4321
 ```
-
-La tienda estará disponible en `http://localhost:4321`.
-
----
-
-## Añadir a Fani como administradora
-
-Después de hacer login con Google por primera vez:
-
-1. Ve al **SQL Editor** en Supabase.
-2. Ejecuta:
-
-```sql
-insert into public.admin_usuarios (user_id, email)
-select id, email
-from auth.users
-where email = 'fani@gmail.com';   -- ← cambia por el email real
-```
-
-A partir de ahí Fani podrá acceder a `/admin` y gestionar todos los productos y pedidos.
 
 ---
 
 ## Despliegue en Netlify
 
-### Configuración inicial (una sola vez)
+1. Conecta el repositorio a Netlify.
+2. La configuración de build ya está en `netlify.toml`.
+3. Añade las variables de entorno en *Site settings → Environment variables*.
+4. En Supabase (*Authentication → URL Configuration*):
+   - **Site URL**: `https://<tu-sitio>.netlify.app`
+   - **Redirect URLs**: `https://<tu-sitio>.netlify.app/auth/callback`
 
-1. Conecta el repositorio de GitHub a Netlify.
-2. La configuración de build ya está en `netlify.toml`:
-   - Build command: `npm run build`
-   - Publish directory: `dist`
-3. En *Site settings → Environment variables* añade las mismas variables del `.env`:
-   - `PUBLIC_SUPABASE_URL`
-   - `PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY`
-   - `PUBLIC_SITE_URL` → la URL final de tu Netlify (p. ej. `https://estiumsew.netlify.app`)
-
-4. Actualiza la **Authorized redirect URI** de Google con la URL de producción:
-   ```
-   https://<tu-proyecto>.supabase.co/auth/v1/callback
-   ```
-
-5. En Supabase (*Authentication → URL Configuration*) añade:
-   - **Site URL**: `https://estiumsew.netlify.app`
-   - **Redirect URLs**: `https://estiumsew.netlify.app/auth/callback`
-
-### Desplegar
-
-Cualquier push a la rama `main` desplegará automáticamente en Netlify.
-
-```bash
-git add .
-git commit -m "feat: nueva versión"
-git push origin main
-```
+Cualquier push a `main` despliega automáticamente.
 
 ---
 
@@ -133,85 +84,63 @@ git push origin main
 
 ```
 estiumsew/
-├── astro.config.mjs          # Config de Astro (SSR + Netlify + React)
-├── package.json
-├── tsconfig.json
-├── netlify.toml              # Config de despliegue
-├── .env.example              # Variables de entorno de ejemplo
-│
 ├── public/
 │   └── favicon.svg
-│
 ├── supabase/
-│   ├── schema.sql            # Tablas, RLS, triggers, storage
-│   └── seed.sql              # Productos iniciales
-│
+│   ├── schema.sql
+│   └── seed.sql
 └── src/
-    ├── env.d.ts              # Tipos globales de Astro (locals)
-    ├── middleware.ts         # Protección de rutas /admin/*
-    ├── styles/
-    │   └── global.css        # Variables CSS, animaciones, componentes base
+    ├── middleware.ts              # Protección de rutas admin
+    ├── styles/global.css          # Variables CSS, animaciones
     ├── lib/
-    │   ├── supabase.ts       # Clientes de Supabase (browser, SSR, admin)
-    │   └── types.ts          # Interfaces TypeScript
+    │   ├── supabase.ts            # Clientes (browser, SSR, admin)
+    │   └── types.ts               # Interfaces TypeScript
     ├── layouts/
-    │   ├── BaseLayout.astro  # Shell HTML + canvas animado + fuentes
-    │   └── AdminLayout.astro # Layout del panel admin con sidebar
+    │   ├── BaseLayout.astro       # Shell HTML + canvas animado
+    │   └── AdminLayout.astro      # Sidebar del panel admin
     ├── components/
-    │   ├── layout/
-    │   │   ├── Nav.astro     # Navegación pública fija
-    │   │   └── Footer.astro  # Pie de página
-    │   ├── shop/
-    │   │   └── ProductCard.astro  # Tarjeta de producto
+    │   ├── layout/Nav.astro       # Nav fija con glass effect + hamburguesa
+    │   ├── layout/Footer.astro
+    │   ├── shop/ProductCard.astro # Tarjeta de producto
     │   └── admin/
-    │       ├── ProductTable.tsx   # Tabla de productos con CRUD
-    │       ├── ProductForm.tsx    # Formulario crear/editar producto
-    │       └── OrderTable.tsx     # Tabla de pedidos con filtros
+    │       ├── ProductTable.tsx   # CRUD de productos
+    │       ├── ProductForm.tsx    # Formulario crear/editar
+    │       └── VisitsChart.tsx    # Gráfica de visitas (donut)
     └── pages/
         ├── index.astro            # Tienda pública
-        ├── login.astro            # Login con Google
-        ├── auth/
-        │   └── callback.ts        # Callback OAuth de Supabase
-        ├── api/auth/
-        │   └── logout.ts          # Endpoint de logout
+        ├── login.astro
+        ├── auth/callback.ts       # Callback OAuth
+        ├── api/
+        │   ├── visita.ts          # Tracker de visitas
+        │   ├── auth/logout.ts
+        │   └── admin/             # Endpoints protegidos (service_role)
+        │       ├── products/
+        │       ├── upload.ts
+        │       └── visits.ts
         └── admin/
-            ├── index.astro        # Dashboard admin
-            ├── productos.astro    # Gestión de productos
-            └── pedidos.astro      # Gestión de pedidos
+            ├── index.astro        # Dashboard
+            ├── productos.astro
+            └── pedidos.astro
 ```
 
 ---
 
 ## Panel de administración
 
-Una vez logueada como admin, Fani puede acceder a:
-
 | Ruta | Descripción |
-|---|---|
-| `/admin` | Dashboard con stats y últimas consultas |
-| `/admin/productos` | Crear, editar, reordenar y eliminar productos |
-| `/admin/pedidos` | Ver y actualizar el estado de los pedidos |
+|------|-------------|
+| `/admin` | Dashboard: estadísticas, gráfica de visitas, pedidos recientes |
+| `/admin/productos` | Crear, editar, reordenar y eliminar productos con subida de imagen |
+| `/admin/pedidos` | Gestionar estados de pedidos y responder por WhatsApp |
 
-### Gestión de productos
+### Añadir una cuenta de administrador
 
-- **Crear**: botón "Nuevo producto" en el dashboard o en la página de productos.
-- **Editar**: botón de edición en cada fila de la tabla.
-- **Imagen**: subir directamente desde el formulario (se sube a Supabase Storage).
-- **Eliminar**: botón de borrado con confirmación.
-- **Activar/desactivar**: switch para ocultar productos sin borrarlos.
-
-### Gestión de pedidos
-
-Los estados disponibles son:
-- `pendiente` → `confirmado` → `en_proceso` → `enviado` → `entregado`
-- `cancelado` (disponible en cualquier momento)
-
-Desde el modal de detalle se puede responder directamente por WhatsApp al cliente.
+1. El usuario hace login con Google en `/login` (crea su cuenta en Supabase Auth).
+2. En Supabase → *Authentication → Users*, copia su UUID.
+3. En *Table Editor → `admin_usuarios`*, inserta una fila con ese UUID.
 
 ---
 
-## Contacto
+## Licencia
 
-- Instagram: [@estiumsew](https://instagram.com/estiumsew)
-- WhatsApp: +34 695 25 41 87
-- Sevilla, España 🇪🇸
+Proyecto privado — todos los derechos reservados.

@@ -47,18 +47,22 @@ body {
   overflow-x: hidden;
 }
 
-/* ── Patrón de tela estático (sin animación) ───────────────── */
+/* ── Patrón de tela con drift muy lento ────────────────────── */
 .bg-stitch {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background-image:
     repeating-linear-gradient(-45deg,
-      transparent 0, transparent 18px,
-      rgba(180,120,100,.04) 18px, rgba(180,120,100,.04) 19px),
+      transparent 0, transparent 22px,
+      rgba(180,120,100,.035) 22px, rgba(180,120,100,.035) 23px),
     repeating-linear-gradient(45deg,
-      transparent 0, transparent 18px,
-      rgba(130,160,125,.03) 18px, rgba(130,160,125,.03) 19px);
-  background-size: 56px 56px;
-  /* Sin animación: solo textura estática suave */
+      transparent 0, transparent 22px,
+      rgba(130,160,125,.025) 22px, rgba(130,160,125,.025) 23px);
+  background-size: 64px 64px;
+  animation: stitchDrift 80s linear infinite;
+}
+@keyframes stitchDrift {
+  from { background-position: 0 0; }
+  to   { background-position: 64px 64px; }
 }
 
 /* ── Canvas de fondo (debe ser fixed para no ocupar espacio) ── */
@@ -101,26 +105,40 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Scroll reveals — easing elegante, deceleración suave */
+/* Scroll reveals — entrada suave con muelle */
 .reveal {
   opacity: 0;
-  transform: translateY(32px);
-  transition: opacity .85s var(--ease-out), transform .85s var(--ease-out);
+  transform: translateY(36px);
+  transition:
+    opacity .9s var(--ease-out),
+    transform .9s var(--ease-out);
 }
 .reveal.visible { opacity: 1; transform: translateY(0); }
 
-/* Variantes de dirección */
-.reveal-left  { opacity: 0; transform: translateX(-28px); transition: opacity .85s var(--ease-out), transform .85s var(--ease-out); }
-.reveal-right { opacity: 0; transform: translateX(28px);  transition: opacity .85s var(--ease-out), transform .85s var(--ease-out); }
-.reveal-left.visible, .reveal-right.visible { opacity: 1; transform: translateX(0); }
+.reveal-left  {
+  opacity: 0; transform: translateX(-32px);
+  transition: opacity .9s var(--ease-out), transform .9s var(--ease-out);
+}
+.reveal-right {
+  opacity: 0; transform: translateX(32px);
+  transition: opacity .9s var(--ease-out), transform .9s var(--ease-out);
+}
+.reveal-left.visible,
+.reveal-right.visible { opacity: 1; transform: translateX(0); }
 
 /* Delays escalonados */
-.reveal-d1 { transition-delay: .07s; }
-.reveal-d2 { transition-delay: .14s; }
-.reveal-d3 { transition-delay: .21s; }
-.reveal-d4 { transition-delay: .28s; }
-.reveal-d5 { transition-delay: .35s; }
-.reveal-d6 { transition-delay: .42s; }
+.reveal-d1 { transition-delay: .06s; }
+.reveal-d2 { transition-delay: .12s; }
+.reveal-d3 { transition-delay: .18s; }
+.reveal-d4 { transition-delay: .24s; }
+.reveal-d5 { transition-delay: .30s; }
+.reveal-d6 { transition-delay: .36s; }
+
+/* Shimmer para elementos que cargan */
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
 
 /* ── Botones ───────────────────────────────────────────────── */
 .btn {

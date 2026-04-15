@@ -1,83 +1,120 @@
 ---
 /**
- * Nav – Barra de navegación principal (fija, con blur)
+ * Nav – Barra de navegación principal
+ * · Transparente hasta el scroll → glass con blur
+ * · Hamburguesa en móvil con menú deslizante
  */
 import type { User } from '@supabase/supabase-js';
 interface Props { user?: User | null }
 const { user } = Astro.props;
 ---
-<nav>
-  <a href="/" class="logo" aria-label="estiumsew">
-    <svg viewBox="0 0 180 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <line x1="6" y1="8" x2="6" y2="32" stroke="#C9907A" stroke-width="1.5" stroke-linecap="round"/>
-      <ellipse cx="6" cy="7" rx="2.5" ry="3.5" stroke="#C9907A" stroke-width="1.2" fill="none"/>
-      <line x1="4.8" y1="6.5" x2="7.2" y2="6.5" stroke="#C9907A" stroke-width="1" stroke-linecap="round"/>
-      <path d="M6 32 Q10 38 6 36" stroke="#C9907A" stroke-width="1" fill="none" stroke-linecap="round"/>
-      <path d="M9 20 Q15 13 20 20 Q25 27 30 20 Q35 13 40 20" stroke="#B5C4B1" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-      <text x="46" y="26" font-family="Georgia,'Playfair Display',serif" font-size="17" fill="#2E2520" letter-spacing="0.5">estium</text>
-      <text x="115" y="26" font-family="Georgia,'Playfair Display',serif" font-size="17" font-style="italic" fill="#C9907A" letter-spacing="0.5">sew</text>
-      <circle cx="43" cy="23" r="1.8" fill="#E8C4B8"/>
-    </svg>
-  </a>
 
-  <ul class="nav-menu">
-    <li><a href="/#sobre">Sobre mí</a></li>
-    <li><a href="/#coleccion">Colección</a></li>
-    <li><a href="/#proceso">Proceso</a></li>
-    <li><a href="/#contacto">Contacto</a></li>
-  </ul>
-
-  <div class="nav-right">
-    {user ? (
-      <a href="/admin" class="nav-admin">
-        <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
-        Admin
-      </a>
-    ) : null}
-    <a href="https://instagram.com/estiumsew" target="_blank" rel="noopener" class="nav-ig">
-      <svg viewBox="0 0 24 24">
-        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+<header class="nav-wrap">
+  <nav>
+    <!-- Logo -->
+    <a href="/" class="logo" aria-label="estiumsew">
+      <svg viewBox="0 0 180 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="6" y1="8" x2="6" y2="32" stroke="#C9907A" stroke-width="1.5" stroke-linecap="round"/>
+        <ellipse cx="6" cy="7" rx="2.5" ry="3.5" stroke="#C9907A" stroke-width="1.2" fill="none"/>
+        <line x1="4.8" y1="6.5" x2="7.2" y2="6.5" stroke="#C9907A" stroke-width="1" stroke-linecap="round"/>
+        <path d="M6 32 Q10 38 6 36" stroke="#C9907A" stroke-width="1" fill="none" stroke-linecap="round"/>
+        <path d="M9 20 Q15 13 20 20 Q25 27 30 20 Q35 13 40 20" stroke="#B5C4B1" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+        <text x="46" y="26" font-family="Georgia,'Playfair Display',serif" font-size="17" fill="#2E2520" letter-spacing="0.5">estium</text>
+        <text x="115" y="26" font-family="Georgia,'Playfair Display',serif" font-size="17" font-style="italic" fill="#C9907A" letter-spacing="0.5">sew</text>
+        <circle cx="43" cy="23" r="1.8" fill="#E8C4B8"/>
       </svg>
-      @estiumsew
     </a>
+
+    <!-- Menú desktop -->
+    <ul class="nav-menu" id="nav-menu">
+      <li><a href="/#sobre">Sobre mí</a></li>
+      <li><a href="/#coleccion">Colección</a></li>
+      <li><a href="/#proceso">Proceso</a></li>
+      <li><a href="/#contacto">Contacto</a></li>
+    </ul>
+
+    <!-- Derecha: Instagram + admin + hamburguesa -->
+    <div class="nav-right">
+      {user && (
+        <a href="/admin" class="nav-admin">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+          Admin
+        </a>
+      )}
+      <a href="https://instagram.com/estiumsew" target="_blank" rel="noopener" class="nav-ig">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+        </svg>
+        @estiumsew
+      </a>
+
+      <!-- Hamburguesa (solo móvil) -->
+      <button class="nav-burger" id="nav-burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-drawer">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Drawer móvil -->
+  <div class="nav-drawer" id="nav-drawer" aria-hidden="true">
+    <div class="nav-drawer-inner">
+      <ul>
+        <li><a href="/#sobre"    class="drawer-link">Sobre mí</a></li>
+        <li><a href="/#coleccion" class="drawer-link">Colección</a></li>
+        <li><a href="/#proceso"  class="drawer-link">Proceso</a></li>
+        <li><a href="/#contacto" class="drawer-link">Contacto</a></li>
+        {user && <li><a href="/admin" class="drawer-link drawer-admin">Panel Admin</a></li>}
+      </ul>
+      <a href="https://instagram.com/estiumsew" target="_blank" rel="noopener" class="drawer-ig">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+        @estiumsew
+      </a>
+    </div>
   </div>
-</nav>
+
+  <!-- Overlay oscuro detrás del drawer -->
+  <div class="nav-overlay" id="nav-overlay"></div>
+</header>
 
 <style>
+  /* ── Wrapper y barra ───────────────────────────────── */
+  .nav-wrap {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  }
+
   nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     display: flex; align-items: center; justify-content: space-between;
-    padding: 22px 52px;
+    padding: 20px 52px;
     background: rgba(250,247,242,0);
     backdrop-filter: blur(0px);
     -webkit-backdrop-filter: blur(0px);
     border-bottom: 1px solid transparent;
     transition:
-      background .5s ease,
-      backdrop-filter .5s ease,
-      border-color .5s ease,
-      box-shadow .5s ease,
-      padding .5s ease;
+      background .45s ease,
+      backdrop-filter .45s ease,
+      border-color .45s ease,
+      box-shadow .45s ease,
+      padding .45s ease;
   }
 
-  /* Al hacer scroll: glass opaco */
-  nav.scrolled {
-    background: rgba(250,247,242,.88);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+  .nav-wrap.scrolled nav {
+    background: rgba(250,247,242,.92);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
     border-bottom-color: rgba(180,130,105,.18);
-    box-shadow: 0 2px 24px rgba(46,37,32,.06);
-    padding: 16px 52px;
+    box-shadow: 0 2px 28px rgba(46,37,32,.06);
+    padding: 14px 52px;
   }
 
+  /* ── Logo ──────────────────────────────────────────── */
   .logo { text-decoration: none; display: flex; align-items: center; }
-  .logo svg {
-    height: 36px; width: auto;
-    transition: opacity .3s ease;
-  }
+  .logo svg { height: 34px; width: auto; transition: opacity .3s ease; }
   .logo:hover svg { opacity: .75; }
 
-  .nav-menu { display: flex; gap: 36px; list-style: none; }
+  /* ── Menú desktop ──────────────────────────────────── */
+  .nav-menu {
+    display: flex; gap: 36px; list-style: none;
+  }
   .nav-menu a {
     font-size: .78rem; font-weight: 400;
     letter-spacing: 1.8px; text-transform: uppercase;
@@ -85,18 +122,16 @@ const { user } = Astro.props;
     position: relative;
     transition: color .28s ease;
   }
-  /* Línea bajo el link al hover */
   .nav-menu a::after {
-    content: '';
-    position: absolute; bottom: -3px; left: 0; right: 0;
+    content: ''; position: absolute; bottom: -4px; left: 0; right: 0;
     height: 1px; background: var(--rose);
-    transform: scaleX(0);
-    transform-origin: center;
+    transform: scaleX(0); transform-origin: center;
     transition: transform .3s ease;
   }
   .nav-menu a:hover { color: var(--rose); }
   .nav-menu a:hover::after { transform: scaleX(1); }
 
+  /* ── Derecha ───────────────────────────────────────── */
   .nav-right { display: flex; align-items: center; gap: 16px; }
 
   .nav-ig, .nav-admin {
@@ -106,35 +141,135 @@ const { user } = Astro.props;
     transition: color .28s ease;
   }
   .nav-ig:hover, .nav-admin:hover { color: var(--rose); }
-  .nav-ig svg, .nav-admin svg {
-    width: 14px; height: 14px; fill: currentColor;
-    transition: transform .3s ease;
-  }
-  .nav-ig:hover svg { transform: scale(1.15); }
+  .nav-ig svg, .nav-admin svg { width: 14px; height: 14px; fill: currentColor; transition: transform .3s ease; }
+  .nav-ig:hover svg { transform: scale(1.12); }
 
+  /* ── Hamburguesa ───────────────────────────────────── */
+  .nav-burger {
+    display: none;
+    flex-direction: column; justify-content: center; align-items: center;
+    gap: 5px;
+    width: 40px; height: 40px;
+    background: transparent; border: 1px solid rgba(180,130,105,.25);
+    border-radius: 10px; cursor: pointer;
+    padding: 0;
+    transition: border-color .2s, background .2s;
+  }
+  .nav-burger:hover { border-color: var(--rose); background: rgba(201,144,122,.06); }
+  .nav-burger span {
+    display: block; width: 18px; height: 1.5px;
+    background: var(--txt-m); border-radius: 2px;
+    transition: transform .35s var(--ease-out), opacity .25s ease, width .25s ease;
+    transform-origin: center;
+  }
+  /* Estado abierto */
+  .nav-wrap.menu-open .nav-burger span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+  .nav-wrap.menu-open .nav-burger span:nth-child(2) { opacity: 0; width: 0; }
+  .nav-wrap.menu-open .nav-burger span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+  /* ── Drawer móvil ──────────────────────────────────── */
+  .nav-drawer {
+    position: fixed; top: 0; right: 0; bottom: 0;
+    width: min(300px, 85vw);
+    background: var(--cream);
+    border-left: 1px solid var(--border);
+    box-shadow: -8px 0 40px rgba(46,37,32,.08);
+    transform: translateX(100%);
+    transition: transform .4s var(--ease-out);
+    z-index: 300;
+    display: flex; flex-direction: column;
+  }
+  .nav-wrap.menu-open .nav-drawer {
+    transform: translateX(0);
+  }
+
+  .nav-drawer-inner {
+    padding: 80px 32px 40px;
+    display: flex; flex-direction: column; height: 100%;
+  }
+  .nav-drawer-inner ul { list-style: none; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .drawer-link {
+    display: block; padding: 14px 0;
+    font-size: 1.05rem; font-weight: 300;
+    font-family: 'Playfair Display', serif;
+    color: var(--txt); text-decoration: none;
+    border-bottom: 1px solid rgba(180,130,105,.12);
+    transition: color .2s ease, padding-left .25s var(--ease-out);
+  }
+  .drawer-link:hover { color: var(--rose); padding-left: 8px; }
+  .drawer-admin {
+    font-size: .82rem; font-family: 'Inter', sans-serif;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: var(--rose-d);
+  }
+  .drawer-ig {
+    display: flex; align-items: center; gap: 8px;
+    font-size: .78rem; color: var(--txt-m); text-decoration: none;
+    margin-top: 28px;
+    transition: color .2s;
+  }
+  .drawer-ig:hover { color: var(--rose); }
+
+  /* Overlay oscuro */
+  .nav-overlay {
+    position: fixed; inset: 0; z-index: 250;
+    background: rgba(46,37,32,.35);
+    opacity: 0; pointer-events: none;
+    transition: opacity .35s ease;
+  }
+  .nav-wrap.menu-open .nav-overlay { opacity: 1; pointer-events: all; }
+
+  /* ── Responsive ────────────────────────────────────── */
   @media (max-width: 960px) {
-    nav        { padding: 18px 28px; }
-    nav.scrolled { padding: 14px 28px; }
-    .nav-menu  { display: none; }
+    nav, .nav-wrap.scrolled nav { padding: 16px 24px; }
+    .nav-menu { display: none; }
+    .nav-ig   { display: none; }
+    .nav-admin { display: none; }
+    .nav-burger { display: flex; }
   }
 </style>
 
 <script>
   (() => {
-    const nav = document.querySelector('nav');
-    if (!nav) return;
+    const wrap    = document.querySelector('.nav-wrap')    as HTMLElement;
+    const burger  = document.getElementById('nav-burger')  as HTMLButtonElement;
+    const drawer  = document.getElementById('nav-drawer')  as HTMLElement;
+    const overlay = document.getElementById('nav-overlay') as HTMLElement;
+    if (!wrap || !burger) return;
 
+    /* ── Scroll glass effect ── */
     let ticking = false;
-    const update = () => {
-      nav.classList.toggle('scrolled', window.scrollY > 40);
+    const updateScroll = () => {
+      wrap.classList.toggle('scrolled', window.scrollY > 40);
       ticking = false;
     };
-
     window.addEventListener('scroll', () => {
-      if (!ticking) { requestAnimationFrame(update); ticking = true; }
+      if (!ticking) { requestAnimationFrame(updateScroll); ticking = true; }
     }, { passive: true });
+    updateScroll();
 
-    // Estado inicial
-    update();
+    /* ── Hamburguesa ── */
+    const openMenu  = () => {
+      wrap.classList.add('menu-open');
+      burger.setAttribute('aria-expanded', 'true');
+      drawer.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    };
+    const closeMenu = () => {
+      wrap.classList.remove('menu-open');
+      burger.setAttribute('aria-expanded', 'false');
+      drawer.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    };
+    const toggleMenu = () => wrap.classList.contains('menu-open') ? closeMenu() : openMenu();
+
+    burger.addEventListener('click', toggleMenu);
+    overlay.addEventListener('click', closeMenu);
+
+    // Cerrar al pulsar un link del drawer
+    drawer.querySelectorAll('a').forEach(a => a.addEventListener('click', closeMenu));
+
+    // Cerrar con Escape
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
   })();
 </script>

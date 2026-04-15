@@ -3,10 +3,11 @@
  * index.astro – Página principal / tienda pública
  * Carga los productos desde Supabase en el servidor (SSR)
  */
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import Nav        from '@/components/layout/Nav.astro';
-import Footer     from '@/components/layout/Footer.astro';
-import ProductCard from '@/components/shop/ProductCard.astro';
+import BaseLayout    from '@/layouts/BaseLayout.astro';
+import Nav           from '@/components/layout/Nav.astro';
+import Footer        from '@/components/layout/Footer.astro';
+import ProductCard   from '@/components/shop/ProductCard.astro';
+import PriceCarousel from '@/components/shop/PriceCarousel.astro';
 import { createServerClient } from '@/lib/supabase';
 import type { Producto } from '@/lib/types';
 
@@ -52,15 +53,7 @@ const items: Producto[] = productos ?? [];
     </div>
 
     <div class="hero-visual">
-      <div class="hero-img-wrap">
-        <img src="/img/fanurricolor.png" alt="Fani Mateos · estiumsew" class="hero-photo" />
-      </div>
-
-      <div class="hero-tag">✦ Pedidos personalizados por MD</div>
-      <div class="hero-badge">
-        <span>Since</span>
-        <span>2024</span>
-      </div>
+      <PriceCarousel />
     </div>
   </section>
 
@@ -196,59 +189,38 @@ const items: Producto[] = productos ?? [];
   }
   .hero-pill {
     display: inline-flex; align-items: center; gap: 8px;
-    background: var(--cream2); border: 1px solid var(--linen);
+    background: var(--lime-l); border: 1px solid var(--lime);
+    font-family: 'Jost', sans-serif;
     border-radius: 40px; padding: 6px 16px;
-    font-size: .72rem; font-weight: 500; letter-spacing: 1.5px;
-    text-transform: uppercase; color: var(--rose-d);
+    font-family: 'Jost', sans-serif;
+    font-size: .7rem; font-weight: 600; letter-spacing: 2px;
+    text-transform: uppercase; color: #4a7a0a;
     margin-bottom: 28px;
     opacity: 0; animation: rise .75s var(--ease-out) .1s forwards;
   }
-  .hero-pill::before { content:''; width: 6px; height: 6px; background: var(--rose); border-radius: 50%; }
+  .hero-pill::before { content:''; width: 6px; height: 6px; background: var(--lime); border-radius: 50%; }
   .hero h1 {
-    font-family: 'Playfair Display', serif; font-weight: 400;
-    font-size: clamp(3rem, 6vw, 5.2rem); line-height: 1.08;
+    font-family: 'Bebas Neue', sans-serif; font-weight: 400;
+    font-size: clamp(4rem, 9vw, 7.5rem); line-height: 0.95;
     color: var(--txt); margin-bottom: 24px;
     opacity: 0; animation: rise .9s var(--ease-out) .22s forwards;
+    letter-spacing: 2px;
   }
-  .hero h1 em { font-style: italic; color: var(--rose); }
+  /* em dentro del h1 → Pacifico como acento artesanal */
+  .hero h1 em {
+    font-family: 'Pacifico', cursive;
+    font-style: normal; font-size: .78em;
+    color: var(--rose); letter-spacing: 0;
+  }
   .hero-desc {
     font-size: .95rem; line-height: 1.9; color: var(--txt-m);
     max-width: 400px; margin-bottom: 40px;
     opacity: 0; animation: rise .9s var(--ease-out) .38s forwards;
   }
   .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; opacity: 0; animation: rise .9s var(--ease-out) .52s forwards; }
-  .hero-visual { opacity: 0; animation: rise 1s var(--ease-out) .28s forwards; position: relative; }
-  .hero-img-wrap {
-    aspect-ratio: 4/5; background: var(--cream2);
-    border-radius: 20px; overflow: hidden;
-    border: 1px solid var(--border);
-    box-shadow: 0 24px 60px rgba(0,0,0,.08);
-  }
-  .hero-photo {
-    width: 100%; height: 100%; object-fit: cover; object-position: top center;
-    transition: transform 0.7s var(--ease-out);
-  }
-  .hero-img-wrap:hover .hero-photo { transform: scale(1.03); }
-  .hero-tag {
-    position: absolute; bottom: -14px; left: 28px;
-    background: var(--white); border: 1px solid var(--border);
-    border-radius: 40px; padding: 8px 20px;
-    font-size: .75rem; font-weight: 500; color: var(--txt-m);
-    box-shadow: 0 6px 24px rgba(0,0,0,.08);
-    display: flex; align-items: center; gap: 8px;
-    animation: float 6s ease-in-out 1.4s infinite;
-  }
-  .hero-badge {
-    position: absolute; top: 20px; right: -14px;
-    width: 80px; height: 80px;
-    background: var(--blush); border-radius: 50%;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    font-size: .65rem; font-weight: 500; letter-spacing: 1px;
-    text-transform: uppercase; color: var(--rose-d);
-    text-align: center; line-height: 1.4;
-    border: 4px solid var(--cream);
-    box-shadow: 0 8px 28px rgba(201,144,122,.18);
-    animation: float 5s ease-in-out 1.2s infinite;
+  .hero-visual {
+    opacity: 0;
+    animation: rise 1s var(--ease-out) .28s forwards;
   }
 
   /* ── Sobre ─────────────────────────────────────────────── */
@@ -290,13 +262,15 @@ const items: Producto[] = productos ?? [];
     margin-bottom: 48px; flex-wrap: wrap; gap: 16px;
   }
   .link-sutil {
-    font-size: .78rem; font-weight: 500; letter-spacing: 1px;
-    color: var(--rose); text-decoration: none;
-    border-bottom: 1px solid rgba(201,144,122,.3);
+    font-family: 'Jost', sans-serif;
+    font-size: .74rem; font-weight: 500; letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--sage); text-decoration: none;
+    border-bottom: 1px solid rgba(136,80,192,.3);
     padding-bottom: 1px;
     transition: border-color .28s var(--ease-out), color .28s var(--ease-out);
   }
-  .link-sutil:hover { border-color: var(--rose); }
+  .link-sutil:hover { border-color: var(--sage); color: var(--sage-d); }
 
   .productos-grid {
     display: grid;
@@ -326,19 +300,19 @@ const items: Producto[] = productos ?? [];
   }
 
   /* ── Proceso ───────────────────────────────────────────── */
-  .proceso { margin: 80px 0; background: var(--cream2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 80px 52px; }
+  .proceso { margin: 80px 0; background: linear-gradient(135deg, var(--cream2) 0%, rgba(210,168,240,.12) 100%); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 80px 52px; }
   .proceso-inner { max-width: 1100px; margin: 0 auto; }
   .texto-centro { margin-bottom: 48px; }
   .proceso-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 32px; margin-top: 48px; }
   /* El número es ~3.5rem × 1 line-height ≈ 56px → padding-top lo supera */
   .paso { position: relative; padding-top: 64px; }
   .paso-n {
-    font-family: 'Playfair Display',serif; font-size: 3.5rem;
-    color: var(--linen); line-height: 1;
+    font-family: 'Bebas Neue', sans-serif; font-size: 4rem;
+    color: rgba(136,80,192,.20); line-height: 1; letter-spacing: 2px;
     position: absolute; top: 0; left: 0;
     pointer-events: none; user-select: none;
   }
-  .paso h4 { font-family: 'Playfair Display',serif; font-size: 1.05rem; font-weight: 400; margin-bottom: 8px; }
+  .paso h4 { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; font-weight: 400; letter-spacing: 1.5px; margin-bottom: 8px; }
   .paso p  { font-size: .82rem; color: var(--txt-m); line-height: 1.8; }
 
   /* ── Contacto ──────────────────────────────────────────── */

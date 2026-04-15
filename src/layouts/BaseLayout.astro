@@ -39,12 +39,12 @@ const {
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
     rel="preload" as="style"
-    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Jost:wght@300;400;500;600&family=Pacifico&display=swap"
     onload="this.rel='stylesheet'"
   />
   <noscript>
     <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Jost:wght@300;400;500;600&family=Pacifico&display=swap"
       rel="stylesheet"
     />
   </noscript>
@@ -69,23 +69,24 @@ const {
       const canvas = document.getElementById('bg-canvas') as HTMLCanvasElement;
       const ctx    = canvas.getContext('2d')!;
 
-      // ── Colores de marca ─────────────────────────────────────
+      // ── Colores de marca: rosa · púrpura · lima ──────────────
       const THREAD_COLORS = [
-        '201,144,122',   // rose
-        '181,196,177',   // sage
-        '180,130,105',   // blush-d
-        '221,211,199',   // linen
-        '168,112, 92',   // rose-d
+        '224, 56,120',   // rose vivo
+        '136, 80,192',   // púrpura
+        '126,192, 33',   // lima
+        '244,174,206',   // blush suave
+        '184,31, 90',    // rose oscuro
+        '100, 48,160',   // púrpura oscuro
       ];
 
-      // ── Blobs de fondo suaves ────────────────────────────────
+      // ── Blobs de fondo: tonos rosa-lila-lima ─────────────────
       const blobs = [
-        { x: .12, y: .22, r: .50, color: 'rgba(232,196,184,', speed: .000055, phase: 0,   amp: .028 },
-        { x: .80, y: .15, r: .42, color: 'rgba(181,196,177,', speed: .000040, phase: 1.4, amp: .024 },
-        { x: .50, y: .62, r: .52, color: 'rgba(221,211,199,', speed: .000048, phase: 2.6, amp: .022 },
-        { x: .10, y: .80, r: .36, color: 'rgba(201,144,122,', speed: .000035, phase: 0.9, amp: .018 },
-        { x: .88, y: .75, r: .40, color: 'rgba(181,196,177,', speed: .000042, phase: 3.8, amp: .026 },
-        { x: .40, y: .08, r: .28, color: 'rgba(232,196,184,', speed: .000060, phase: 5.1, amp: .016 },
+        { x: .12, y: .22, r: .50, color: 'rgba(244,174,206,', speed: .000055, phase: 0,   amp: .028 },
+        { x: .80, y: .15, r: .42, color: 'rgba(210,168,240,', speed: .000040, phase: 1.4, amp: .024 },
+        { x: .50, y: .62, r: .52, color: 'rgba(234,212,235,', speed: .000048, phase: 2.6, amp: .022 },
+        { x: .10, y: .80, r: .36, color: 'rgba(224, 56,120,', speed: .000035, phase: 0.9, amp: .018 },
+        { x: .88, y: .75, r: .40, color: 'rgba(190,230,140,', speed: .000042, phase: 3.8, amp: .026 },
+        { x: .40, y: .08, r: .28, color: 'rgba(136, 80,192,', speed: .000060, phase: 5.1, amp: .016 },
       ];
 
       // ── Tipos de hilo ────────────────────────────────────────

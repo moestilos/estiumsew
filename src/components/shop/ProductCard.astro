@@ -170,19 +170,20 @@ const precioStr = Number.isNaN(precio)
   /* ── Badges ────────────────────────────────────────── */
   .badge-craft {
     position: absolute; top: 12px; left: 12px; z-index: 2;
-    background: rgba(250,247,242,.9);
+    background: rgba(126,192,33,.88);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(201,144,122,.22);
+    border: 1px solid rgba(126,192,33,.6);
     border-radius: 30px;
     padding: 3px 10px;
-    font-size: .6rem; font-weight: 500;
-    letter-spacing: 1.2px; text-transform: uppercase;
-    color: var(--rose-d);
+    font-family: 'Jost', sans-serif;
+    font-size: .58rem; font-weight: 600;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: #fff;
     transition: background .3s, transform .3s var(--ease-out);
   }
   .card:hover .badge-craft {
-    background: rgba(250,247,242,.97);
+    background: rgba(106,171,21,.95);
     transform: translateY(-1px);
   }
 
@@ -209,9 +210,10 @@ const precioStr = Number.isNaN(precio)
   }
 
   .card-name {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.05rem; font-weight: 400;
-    color: var(--txt); line-height: 1.35;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem; font-weight: 400;
+    letter-spacing: 1.5px;
+    color: var(--txt); line-height: 1.2;
     transition: color .25s ease;
   }
   .card:hover .card-name { color: var(--rose-d); }
@@ -236,18 +238,20 @@ const precioStr = Number.isNaN(precio)
 
   .card-price-wrap { display: flex; align-items: baseline; gap: 2px; }
   .card-price {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.2rem; font-weight: 400;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem; font-weight: 400;
     color: var(--rose-d);
-    letter-spacing: -.3px;
+    letter-spacing: 1px;
   }
 
   .card-cta {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 7px 14px; border-radius: 30px;
-    font-size: .72rem; font-weight: 500; letter-spacing: .3px;
-    color: var(--rose); text-decoration: none;
-    border: 1px solid rgba(201,144,122,.3);
+    font-family: 'Jost', sans-serif;
+    font-size: .68rem; font-weight: 600; letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--sage); text-decoration: none;
+    border: 1px solid rgba(136,80,192,.3);
     background: transparent;
     transition:
       background .28s var(--ease-out),
@@ -258,9 +262,9 @@ const precioStr = Number.isNaN(precio)
     white-space: nowrap;
   }
   .card-cta:hover {
-    background: var(--rose);
+    background: var(--sage);
     color: #fff;
-    border-color: var(--rose);
+    border-color: var(--sage);
     transform: translateY(-2px);
     gap: 8px;
   }

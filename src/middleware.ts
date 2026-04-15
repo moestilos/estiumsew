@@ -12,8 +12,10 @@ import { createServerClient, isAdmin } from '@/lib/supabase';
 export const onRequest = defineMiddleware(async (context, next) => {
   const { request, cookies, redirect, url } = context;
 
-  // Solo protegemos las rutas de admin
-  if (!url.pathname.startsWith('/admin')) {
+  // Protegemos rutas de admin (páginas y API)
+  const isAdminPage = url.pathname.startsWith('/admin');
+  const isAdminApi  = url.pathname.startsWith('/api/admin');
+  if (!isAdminPage && !isAdminApi) {
     return next();
   }
 
@@ -22,22 +24,34 @@ export const onRequest = defineMiddleware(async (context, next) => {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Sin sesión → redirigir a login
+  // Sin sesión → en API devolver 401, en páginas redirigir a login
   if (!user) {
+    if (isAdminApi) {
+      return new Response(JSON.stringify({ error: 'No autorizado' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
     const loginUrl = new URL('/login', url.origin);
     loginUrl.searchParams.set('redirect', url.pathname);
     return redirect(loginUrl.toString());
   }
 
-  // Con sesión pero sin permisos de admin → redirigir a inicio
+  // Verificar permisos de admin
   const admin = await isAdmin(user.id);
   if (!admin) {
+    if (isAdminApi) {
+      return new Response(JSON.stringify({ error: 'Acceso denegado' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
     return redirect('/?error=no-autorizado');
   }
 
-  // Todo OK: inyectar usuario en locals para que las páginas lo usen
-  context.locals.user  = user;
-  context.locals.isAdmin = true;
+  // Todo OK: inyectar usuario en locals
+  context.locals.user     = user;
+  context.locals.isAdmin  = true;
 
   return next();
 });

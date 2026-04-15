@@ -67,16 +67,19 @@ const [c1, c2, emoji] = paletas[producto.categoria] ?? ['#F3EDE4', '#E8C4B8', 'ð
 <style>
   .card {
     background: var(--white);
-    border-radius: 12px;
+    border-radius: 16px;
     border: 1.5px solid var(--border);
     overflow: hidden;
-    transition: box-shadow .25s, transform .25s;
+    transition: box-shadow .4s var(--ease-out),
+                transform .4s var(--ease-out),
+                border-color .3s ease;
     position: relative;
+    will-change: transform;
   }
   .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 16px 40px rgba(0,0,0,.09);
-    border-color: rgba(180,130,105,.52);
+    transform: translateY(-6px);
+    box-shadow: 0 20px 52px rgba(0,0,0,.1), 0 4px 16px rgba(201,144,122,.1);
+    border-color: rgba(201,144,122,.45);
   }
 
   .card-wide { grid-column: span 2; }
@@ -89,24 +92,41 @@ const [c1, c2, emoji] = paletas[producto.categoria] ?? ['#F3EDE4', '#E8C4B8', 'ð
   }
   .card-wide .card-img { aspect-ratio: 2/1; }
 
+  /* Overlay sutil en hover */
+  .card-img::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(46,37,32,.08) 0%, transparent 50%);
+    opacity: 0;
+    transition: opacity .4s ease;
+  }
+  .card:hover .card-img::after { opacity: 1; }
+
   .card-img img {
     width: 100%; height: 100%;
     object-fit: cover; position: absolute; inset: 0;
-    transition: transform .5s ease;
+    transition: transform .7s var(--ease-out);
   }
-  .card:hover .card-img img { transform: scale(1.04); }
+  .card:hover .card-img img { transform: scale(1.06); }
 
   .card-img svg { width: 100%; height: 100%; }
 
   .badge-pop {
     position: absolute; top: 14px; left: 14px;
-    background: rgba(255,255,255,.85);
-    backdrop-filter: blur(8px);
+    background: rgba(255,255,255,.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border-radius: 40px;
     padding: 4px 12px;
     font-size: .64rem; font-weight: 500; letter-spacing: 1px;
     color: var(--rose-d); text-transform: uppercase;
     border: 1px solid rgba(201,144,122,.2);
+    transition: background .3s ease, transform .3s var(--ease-out);
+    z-index: 1;
+  }
+  .card:hover .badge-pop {
+    background: rgba(255,255,255,.96);
+    transform: translateY(-1px);
   }
 
   .card-body { padding: 20px 22px 22px; }
@@ -119,7 +139,10 @@ const [c1, c2, emoji] = paletas[producto.categoria] ?? ['#F3EDE4', '#E8C4B8', 'ð
     font-family: 'Playfair Display', serif;
     font-size: 1.2rem; font-weight: 400;
     color: var(--txt); margin-bottom: 6px;
+    transition: color .25s ease;
   }
+  .card:hover .card-name { color: var(--rose-d); }
+
   .card-desc {
     font-size: .8rem; color: var(--txt-l);
     line-height: 1.6; margin-bottom: 18px;
@@ -134,8 +157,21 @@ const [c1, c2, emoji] = paletas[producto.categoria] ?? ['#F3EDE4', '#E8C4B8', 'ð
   .card-cta {
     font-size: .75rem; font-weight: 500;
     color: var(--rose); text-decoration: none;
-    display: flex; align-items: center; gap: 4px;
-    transition: gap .2s;
+    display: flex; align-items: center; gap: 5px;
+    padding: 7px 14px;
+    border-radius: 40px;
+    border: 1px solid rgba(201,144,122,.25);
+    transition: gap .28s var(--ease-out),
+                background .28s ease,
+                border-color .28s ease,
+                color .28s ease;
   }
-  .card-cta:hover { gap: 8px; }
+  .card-cta:hover {
+    gap: 9px;
+    background: var(--rose);
+    color: #fff;
+    border-color: var(--rose);
+  }
+  .card-cta svg { transition: transform .28s var(--ease-out); }
+  .card-cta:hover svg { transform: translateX(2px); }
 </style>

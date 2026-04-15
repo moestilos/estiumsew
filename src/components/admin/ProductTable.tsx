@@ -18,11 +18,8 @@ export default function ProductTable({ initialProducts }: Props) {
   const [loading, setLoading]     = useState(false);
   const [feedback, setFeedback]   = useState<{ type: 'ok'|'err'; msg: string } | null>(null);
 
-  // Obtener token desde localStorage (guardado tras login)
-  function getHeaders() {
-    const token = localStorage.getItem('sb-access-token');
-    return { Authorization: `Bearer ${token}` };
-  }
+  // Las cookies de sesión se envían automáticamente con same-origin fetch
+  const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
   function showFeedback(type: 'ok'|'err', msg: string) {
     setFeedback({ type, msg });
@@ -30,7 +27,7 @@ export default function ProductTable({ initialProducts }: Props) {
   }
 
   async function reload() {
-    const res = await fetch('/api/admin/products', { headers: getHeaders() });
+    const res = await fetch('/api/admin/products');
     if (res.ok) {
       const data = await res.json();
       setProducts(data);
@@ -41,13 +38,10 @@ export default function ProductTable({ initialProducts }: Props) {
     if (!confirm('¿Eliminar este producto? Esta acción no se puede deshacer.')) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/products/${id}`, {
-        method: 'DELETE',
-        headers: getHeaders(),
-      });
+      const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Error al eliminar');
       setProducts(prev => prev.filter(p => p.id !== id));
-      showFeedback('ok', 'Producto eliminado');
+      showFeedback('ok', 'Producto eliminado ✓');
     } catch {
       showFeedback('err', 'Error al eliminar el producto');
     } finally {
@@ -59,7 +53,7 @@ export default function ProductTable({ initialProducts }: Props) {
   async function handleToggleActive(p: Producto) {
     const res = await fetch(`/api/admin/products/${p.id}`, {
       method: 'PATCH',
-      headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+      headers: JSON_HEADERS,
       body: JSON.stringify({ activo: !p.activo }),
     });
     if (res.ok) {

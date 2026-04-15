@@ -47,25 +47,55 @@ const { user } = Astro.props;
   nav {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     display: flex; align-items: center; justify-content: space-between;
-    padding: 20px 52px;
-    background: rgba(250,247,242,.82);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-    border-bottom: 1px solid var(--border);
-    transition: background .3s;
+    padding: 22px 52px;
+    background: rgba(250,247,242,0);
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+    border-bottom: 1px solid transparent;
+    transition:
+      background .5s ease,
+      backdrop-filter .5s ease,
+      border-color .5s ease,
+      box-shadow .5s ease,
+      padding .5s ease;
+  }
+
+  /* Al hacer scroll: glass opaco */
+  nav.scrolled {
+    background: rgba(250,247,242,.88);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom-color: rgba(180,130,105,.18);
+    box-shadow: 0 2px 24px rgba(46,37,32,.06);
+    padding: 16px 52px;
   }
 
   .logo { text-decoration: none; display: flex; align-items: center; }
-  .logo svg { height: 36px; width: auto; }
+  .logo svg {
+    height: 36px; width: auto;
+    transition: opacity .3s ease;
+  }
+  .logo:hover svg { opacity: .75; }
 
   .nav-menu { display: flex; gap: 36px; list-style: none; }
   .nav-menu a {
     font-size: .78rem; font-weight: 400;
     letter-spacing: 1.8px; text-transform: uppercase;
     color: var(--txt-m); text-decoration: none;
-    transition: color .2s;
+    position: relative;
+    transition: color .28s ease;
+  }
+  /* Línea bajo el link al hover */
+  .nav-menu a::after {
+    content: '';
+    position: absolute; bottom: -3px; left: 0; right: 0;
+    height: 1px; background: var(--rose);
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform .3s ease;
   }
   .nav-menu a:hover { color: var(--rose); }
+  .nav-menu a:hover::after { transform: scaleX(1); }
 
   .nav-right { display: flex; align-items: center; gap: 16px; }
 
@@ -73,13 +103,38 @@ const { user } = Astro.props;
     font-size: .78rem; font-weight: 500; letter-spacing: 1px;
     color: var(--txt-m); text-decoration: none;
     display: flex; align-items: center; gap: 6px;
-    transition: color .2s;
+    transition: color .28s ease;
   }
   .nav-ig:hover, .nav-admin:hover { color: var(--rose); }
-  .nav-ig svg, .nav-admin svg { width: 14px; height: 14px; fill: currentColor; }
+  .nav-ig svg, .nav-admin svg {
+    width: 14px; height: 14px; fill: currentColor;
+    transition: transform .3s ease;
+  }
+  .nav-ig:hover svg { transform: scale(1.15); }
 
   @media (max-width: 960px) {
-    nav { padding: 18px 28px; }
-    .nav-menu { display: none; }
+    nav        { padding: 18px 28px; }
+    nav.scrolled { padding: 14px 28px; }
+    .nav-menu  { display: none; }
   }
 </style>
+
+<script>
+  (() => {
+    const nav = document.querySelector('nav');
+    if (!nav) return;
+
+    let ticking = false;
+    const update = () => {
+      nav.classList.toggle('scrolled', window.scrollY > 40);
+      ticking = false;
+    };
+
+    window.addEventListener('scroll', () => {
+      if (!ticking) { requestAnimationFrame(update); ticking = true; }
+    }, { passive: true });
+
+    // Estado inicial
+    update();
+  })();
+</script>

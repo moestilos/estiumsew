@@ -1,9 +1,8 @@
 /**
  * ProductForm – Formulario de creación/edición de productos (React)
- * Gestiona: upload de imagen a Supabase Storage, validación, submit
+ * Usa los endpoints /api/admin/* que emplean service_role (sin RLS).
  */
 import { useState, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
 import type { Producto } from '@/lib/types';
 
 interface Props {
@@ -51,14 +50,12 @@ export default function ProductForm({ product, onSaved, onCancel }: Props) {
   }
 
   async function uploadImage(file: File): Promise<string | null> {
-    const ext  = file.name.split('.').pop() ?? 'jpg';
-    const path = `productos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error: upErr } = await supabase.storage
-      .from('productos')
-      .upload(path, file, { cacheControl: '31536000', upsert: false });
-    if (upErr) { setError('Error al subir la imagen: ' + upErr.message); return null; }
-    const { data } = supabase.storage.from('productos').getPublicUrl(path);
-    return data.publicUrl;
+    const fd = new FormData();
+    fd.append('file', file);
+    const res = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+    const json = await res.json();
+    if (!res.ok) { setError('Error al subir la imagen: ' + (json.error ?? res.statusText)); return null; }
+    return json.url as string;
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -80,26 +77,26 @@ export default function ProductForm({ product, onSaved, onCancel }: Props) {
       }
 
       const payload = { ...form, imagen_url };
-
       let result: Producto;
 
       if (isNew) {
-        const { data, error: dbErr } = await supabase
-          .from('productos')
-          .insert(payload)
-          .select()
-          .single();
-        if (dbErr) throw dbErr;
-        result = data as Producto;
+        const res  = await fetch('/api/admin/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error ?? 'Error al crear');
+        result = json as Producto;
       } else {
-        const { data, error: dbErr } = await supabase
-          .from('productos')
-          .update(payload)
-          .eq('id', product!.id)
-          .select()
-          .single();
-        if (dbErr) throw dbErr;
-        result = data as Producto;
+        const res  = await fetch(`/api/admin/products/${product!.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error ?? 'Error al actualizar');
+        result = json as Producto;
       }
 
       onSaved(result, isNew);

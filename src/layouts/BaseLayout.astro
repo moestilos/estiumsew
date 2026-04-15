@@ -50,6 +50,9 @@ const {
   <canvas id="bg-canvas"></canvas>
   <div class="bg-stitch"></div>
 
+  <!-- Overlay de transición de página -->
+  <div id="page-veil"></div>
+
   <div class="wrap">
     <slot />
   </div>
@@ -60,7 +63,6 @@ const {
       const canvas = document.getElementById('bg-canvas') as HTMLCanvasElement;
       const ctx    = canvas.getContext('2d')!;
 
-      // Velocidades muy bajas y desplazamientos mínimos → sin parpadeos
       const blobs = [
         { x: .15, y: .25, r: .42, color: 'rgba(232,196,184,', speed: .00008, phase: 0   },
         { x: .82, y: .18, r: .35, color: 'rgba(181,196,177,', speed: .00006, phase: 1.2 },
@@ -79,7 +81,6 @@ const {
       function draw(ts: number) {
         ctx.clearRect(0, 0, W, H);
         for (const b of blobs) {
-          // Movimiento muy lento y suave
           const ox = Math.sin(ts * b.speed + b.phase) * 0.025;
           const oy = Math.cos(ts * b.speed * 0.8 + b.phase) * 0.02;
           const cx = (b.x + ox) * W;
@@ -96,7 +97,6 @@ const {
         }
       }
 
-      // Throttle a ~20fps para evitar cualquier parpadeo
       let last = 0;
       function loop(ts: number) {
         if (ts - last > 50) { draw(ts); last = ts; }
@@ -109,7 +109,42 @@ const {
     })();
   </script>
 
-  <!-- Tracker de visitas (solo en tienda pública, no en admin) -->
+  <!-- Transición de página: fade-in al entrar, fade-out al salir -->
+  <script>
+    (() => {
+      const veil = document.getElementById('page-veil') as HTMLElement;
+      if (!veil) return;
+
+      // Fade-in al cargar
+      veil.style.opacity = '1';
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          veil.style.transition = 'opacity .45s ease';
+          veil.style.opacity    = '0';
+          setTimeout(() => { veil.style.pointerEvents = 'none'; }, 460);
+        });
+      });
+
+      // Fade-out al salir (solo links internos, no externos ni admin)
+      document.addEventListener('click', (e) => {
+        const a = (e.target as Element).closest('a');
+        if (!a) return;
+        const href = a.getAttribute('href');
+        if (!href) return;
+        // Solo links internos que no sean anclas ni externos
+        if (href.startsWith('http') || href.startsWith('#') || href.startsWith('/admin') || href.startsWith('/login')) return;
+        if (a.target === '_blank') return;
+
+        e.preventDefault();
+        veil.style.pointerEvents = 'all';
+        veil.style.transition    = 'opacity .35s ease';
+        veil.style.opacity       = '1';
+        setTimeout(() => { window.location.href = href; }, 360);
+      });
+    })();
+  </script>
+
+  <!-- Tracker de visitas -->
   <script>
     fetch('/api/visita', {
       method: 'POST',
@@ -118,15 +153,24 @@ const {
     }).catch(() => {});
   </script>
 
-  <!-- Scroll reveal -->
+  <!-- Scroll reveal — observa .reveal, .reveal-left y .reveal-right -->
   <script>
-    const io = new IntersectionObserver(
-      (entries) => entries.forEach(e => {
-        if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
-      }),
-      { threshold: 0.12 }
-    );
-    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+    (() => {
+      const targets = document.querySelectorAll('.reveal, .reveal-left, .reveal-right');
+      if (!targets.length) return;
+
+      const io = new IntersectionObserver(
+        (entries) => entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('visible');
+            io.unobserve(e.target);
+          }
+        }),
+        { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+      );
+
+      targets.forEach(el => io.observe(el));
+    })();
   </script>
 </body>
 </html>

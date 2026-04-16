@@ -1,10 +1,10 @@
 import { defineConfig } from 'astro/config';
-import netlify from '@astrojs/netlify';
+import vercel from '@astrojs/vercel/serverless';
 import react from '@astrojs/react';
 
 export default defineConfig({
   output: 'server',       // SSR: necesario para auth con cookies
-  adapter: netlify(),
+  adapter: vercel(),
   integrations: [react()],
   vite: {
     define: {

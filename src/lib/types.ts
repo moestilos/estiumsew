@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-//  Tipos centrales de estiumsew
+//  Tipos centrales de estiumsew (post-Neon)
 // ─────────────────────────────────────────────────────────────
 
 export interface Producto {
@@ -25,7 +25,6 @@ export type EstadoPedido =
 
 export interface Pedido {
   id: string;
-  usuario_id: string | null;
   nombre_cliente: string;
   email_cliente: string;
   telefono: string | null;
@@ -34,7 +33,6 @@ export interface Pedido {
   total: string | null;
   creado_en: string;
   pedido_items?: PedidoItem[];
-  perfiles?: { nombre: string | null } | null;
 }
 
 export interface PedidoItem {
@@ -46,43 +44,3 @@ export interface PedidoItem {
   cantidad: number;
   imagen_url: string | null;
 }
-
-export interface Perfil {
-  id: string;
-  nombre: string | null;
-  telefono: string | null;
-  creado_en: string;
-}
-
-// Supabase Database types (tipado manual)
-export type Database = {
-  public: {
-    Tables: {
-      productos: {
-        Row: Producto;
-        Insert: Omit<Producto, 'id' | 'creado_en'>;
-        Update: Partial<Omit<Producto, 'id' | 'creado_en'>>;
-      };
-      pedidos: {
-        Row: Pedido;
-        Insert: Omit<Pedido, 'id' | 'creado_en' | 'pedido_items' | 'perfiles'>;
-        Update: Partial<Pick<Pedido, 'estado' | 'notas' | 'total'>>;
-      };
-      pedido_items: {
-        Row: PedidoItem;
-        Insert: Omit<PedidoItem, 'id'>;
-        Update: Partial<PedidoItem>;
-      };
-      perfiles: {
-        Row: Perfil;
-        Insert: Omit<Perfil, 'creado_en'>;
-        Update: Partial<Omit<Perfil, 'id' | 'creado_en'>>;
-      };
-      admin_usuarios: {
-        Row: { id: string; user_id: string; creado_en: string };
-        Insert: { user_id: string };
-        Update: never;
-      };
-    };
-  };
-};

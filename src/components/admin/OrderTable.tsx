@@ -3,7 +3,6 @@
  */
 import { useState } from 'react';
 import type { Pedido, EstadoPedido } from '@/lib/types';
-import { supabase } from '@/lib/supabase';
 
 interface Props { initialOrders: Pedido[] }
 
@@ -31,13 +30,12 @@ export default function OrderTable({ initialOrders }: Props) {
   const visible = filter === 'todos' ? orders : orders.filter(o => o.estado === filter);
 
   async function changeEstado(orderId: string, estado: EstadoPedido) {
-    const { data, error } = await supabase
-      .from('pedidos')
-      .update({ estado })
-      .eq('id', orderId)
-      .select()
-      .single();
-    if (!error && data) {
+    const res = await fetch(`/api/admin/orders/${orderId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estado }),
+    });
+    if (res.ok) {
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, estado } : o));
       if (selected?.id === orderId) setSelected(prev => prev ? { ...prev, estado } : null);
     }

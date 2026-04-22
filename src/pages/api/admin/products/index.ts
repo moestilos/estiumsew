@@ -1,54 +1,48 @@
 /**
  * /api/admin/products – GET (listar) + POST (crear)
- * Usa service_role para bypassar RLS.
- * Verifica sesión admin via cookies antes de operar.
+ * El middleware garantiza autenticación admin.
  */
 import type { APIRoute } from 'astro';
-import { createServerClient, createAdminClient, isAdmin } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 
-async function verifyAdmin(request: Request, cookies: any): Promise<boolean> {
-  try {
-    const client = createServerClient(request, cookies);
-    const { data: { user } } = await client.auth.getUser();
-    if (!user) return false;
-    return await isAdmin(user.id);
-  } catch {
-    return false;
-  }
-}
-
-export const GET: APIRoute = async ({ request, cookies }) => {
-  if (!(await verifyAdmin(request, cookies))) {
-    return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
-  }
-
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from('productos')
-    .select('*')
-    .order('orden')
-    .order('creado_en');
-
-  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-  return new Response(JSON.stringify(data), { status: 200 });
+export const GET: APIRoute = async () => {
+  const rows = await sql`
+    select * from productos
+    order by orden asc, creado_en asc
+  `;
+  return new Response(JSON.stringify(rows), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
 };
 
-export const POST: APIRoute = async ({ request, cookies }) => {
-  if (!(await verifyAdmin(request, cookies))) {
-    return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
-  }
-
+export const POST: APIRoute = async ({ request }) => {
   let body: any;
   try { body = await request.json(); }
   catch { return new Response(JSON.stringify({ error: 'JSON inválido' }), { status: 400 }); }
 
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from('productos')
-    .insert(body)
-    .select()
-    .single();
+  const {
+    nombre,
+    descripcion = null,
+    precio = null,
+    categoria = null,
+    imagen_url = null,
+    activo = true,
+    wide = false,
+    orden = 0,
+  } = body ?? {};
 
-  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-  return new Response(JSON.stringify(data), { status: 201 });
+  if (!nombre) {
+    return new Response(JSON.stringify({ error: 'nombre es obligatorio' }), { status: 400 });
+  }
+
+  const rows = await sql`
+    insert into productos(nombre, descripcion, precio, categoria, imagen_url, activo, wide, orden)
+    values (${nombre}, ${descripcion}, ${precio}, ${categoria}, ${imagen_url}, ${activo}, ${wide}, ${orden})
+    returning *
+  `;
+  return new Response(JSON.stringify(rows[0]), {
+    status: 201,
+    headers: { 'Content-Type': 'application/json' },
+  });
 };

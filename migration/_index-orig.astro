@@ -1,23 +1,28 @@
 ---
 /**
  * index.astro – Página principal / tienda pública
+ * Carga los productos desde Supabase en el servidor (SSR)
  */
 import BaseLayout    from '@/layouts/BaseLayout.astro';
 import Nav           from '@/components/layout/Nav.astro';
 import Footer        from '@/components/layout/Footer.astro';
 import ProductCard   from '@/components/shop/ProductCard.astro';
 import PriceCarousel from '@/components/shop/PriceCarousel.astro';
-import { sql } from '@/lib/db';
-import { getAdminFromCookies } from '@/lib/auth';
+import { createServerClient } from '@/lib/supabase';
 import type { Producto } from '@/lib/types';
 
-const user = await getAdminFromCookies(Astro.cookies);
+// Obtener usuario y productos en el servidor
+const supabase = createServerClient(Astro.request, Astro.cookies);
+const { data: { user } } = await supabase.auth.getUser();
 
-const items = (await sql`
-  select * from productos
-  where activo = true
-  order by orden asc, creado_en asc
-`) as Producto[];
+const { data: productos } = await supabase
+  .from('productos')
+  .select('*')
+  .eq('activo', true)
+  .order('orden')
+  .order('creado_en');
+
+const items: Producto[] = productos ?? [];
 ---
 
 <BaseLayout

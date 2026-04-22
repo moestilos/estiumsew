@@ -1,27 +1,21 @@
 ---
 /**
  * admin/productos.astro – Gestión completa de productos
- * Carga los productos desde Supabase y pasa la lista al componente React
  */
 import AdminLayout from '@/layouts/AdminLayout.astro';
-import { createServerClient } from '@/lib/supabase';
 import ProductTable from '@/components/admin/ProductTable';
+import { sql } from '@/lib/db';
+import type { Producto } from '@/lib/types';
 
-const supabase = createServerClient(Astro.request, Astro.cookies);
-const { data: { user } } = await supabase.auth.getUser();
+const user = Astro.locals.user!;
 
-const { data: productos } = await supabase
-  .from('productos')
-  .select('*')
-  .order('orden')
-  .order('creado_en', { ascending: false });
+const productos = (await sql`
+  select * from productos
+  order by orden asc, creado_en desc
+`) as Producto[];
 ---
 
-<AdminLayout title="Productos · estiumsew" user={user!}>
-  <!--
-    client:only="react" → El componente React se renderiza solo en el cliente.
-    Necesario para los formularios de edición, drag & drop, etc.
-  -->
+<AdminLayout title="Productos · estiumsew" user={user}>
   <ProductTable
     client:only="react"
     initialProducts={productos ?? []}

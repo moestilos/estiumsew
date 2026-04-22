@@ -4,8 +4,8 @@
  * Logo: Bebas Neue tipográfico + aguja SVG bold
  * Links: pill hover · IG badge · drawer Bebas Neue
  */
-import type { User } from '@supabase/supabase-js';
-interface Props { user?: User | null }
+import type { AdminUser } from '@/lib/auth';
+interface Props { user?: AdminUser | null }
 const { user } = Astro.props;
 ---
 

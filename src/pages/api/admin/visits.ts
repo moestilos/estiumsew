@@ -1,43 +1,33 @@
 /**
- * /api/admin/visits – Devuelve visitas agrupadas por día (últimos 30 días)
- * Usa service_role para bypassar RLS de la tabla visitas.
+ * /api/admin/visits – Visitas agrupadas por día (últimos 30 días)
  */
 import type { APIRoute } from 'astro';
-import { createAdminClient } from '@/lib/supabase';
+import { sql } from '@/lib/db';
 
 export const GET: APIRoute = async () => {
-  const admin = createAdminClient();
-
   const desde = new Date();
   desde.setDate(desde.getDate() - 29);
   desde.setHours(0, 0, 0, 0);
 
-  const { data, error } = await admin
-    .from('visitas')
-    .select('creado_en, pagina')
-    .gte('creado_en', desde.toISOString())
-    .order('creado_en', { ascending: true });
+  const rows = await sql`
+    select creado_en, pagina from visitas
+    where creado_en >= ${desde.toISOString()}
+    order by creado_en asc
+  ` as { creado_en: string; pagina: string }[];
 
-  if (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-  }
-
-  // Generar array de los últimos 30 días (incluye días sin visitas = 0)
-  const days: { fecha: string; visitas: number; pagina?: string }[] = [];
+  const days: { fecha: string; visitas: number }[] = [];
   for (let i = 29; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     days.push({ fecha: d.toISOString().split('T')[0], visitas: 0 });
   }
 
-  // Agrupar por día
-  (data ?? []).forEach(v => {
-    const fecha = v.creado_en.split('T')[0];
+  for (const v of rows) {
+    const fecha = (typeof v.creado_en === 'string' ? v.creado_en : new Date(v.creado_en).toISOString()).split('T')[0];
     const entry = days.find(d => d.fecha === fecha);
     if (entry) entry.visitas++;
-  });
+  }
 
-  // Total
   const total = days.reduce((s, d) => s + d.visitas, 0);
   const hoy   = days[days.length - 1]?.visitas ?? 0;
   const ayer  = days[days.length - 2]?.visitas ?? 0;

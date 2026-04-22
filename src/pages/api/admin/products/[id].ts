@@ -1,26 +1,13 @@
 /**
  * /api/admin/products/[id] – PATCH (actualizar) + DELETE (eliminar)
- * Usa service_role para bypassar RLS.
  */
 import type { APIRoute } from 'astro';
-import { createServerClient, createAdminClient, isAdmin } from '@/lib/supabase';
+import { sql } from '@/lib/db';
+import { del as blobDel } from '@vercel/blob';
 
-async function verifyAdmin(request: Request, cookies: any): Promise<boolean> {
-  try {
-    const client = createServerClient(request, cookies);
-    const { data: { user } } = await client.auth.getUser();
-    if (!user) return false;
-    return await isAdmin(user.id);
-  } catch {
-    return false;
-  }
-}
+const FIELDS = ['nombre','descripcion','precio','categoria','imagen_url','activo','wide','orden'] as const;
 
-export const PATCH: APIRoute = async ({ request, cookies, params }) => {
-  if (!(await verifyAdmin(request, cookies))) {
-    return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
-  }
-
+export const PATCH: APIRoute = async ({ request, params }) => {
   const { id } = params;
   if (!id) return new Response(JSON.stringify({ error: 'ID requerido' }), { status: 400 });
 
@@ -28,51 +15,36 @@ export const PATCH: APIRoute = async ({ request, cookies, params }) => {
   try { body = await request.json(); }
   catch { return new Response(JSON.stringify({ error: 'JSON inválido' }), { status: 400 }); }
 
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from('productos')
-    .update(body)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-  return new Response(JSON.stringify(data), { status: 200 });
-};
-
-export const DELETE: APIRoute = async ({ request, cookies, params }) => {
-  if (!(await verifyAdmin(request, cookies))) {
-    return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
+  const entries = FIELDS.filter(f => f in body).map(f => [f, body[f]] as const);
+  if (entries.length === 0) {
+    return new Response(JSON.stringify({ error: 'sin cambios' }), { status: 400 });
   }
 
+  // Build dynamic UPDATE: @neondatabase/serverless tagged sql supports only static params.
+  // Use a loop of 1-field updates to keep it safe & simple.
+  for (const [col, val] of entries) {
+    await sql.query(`update productos set ${col} = $1 where id = $2`, [val, id]);
+  }
+  const rows = await sql`select * from productos where id = ${id} limit 1`;
+  if (!rows[0]) return new Response(JSON.stringify({ error: 'no existe' }), { status: 404 });
+  return new Response(JSON.stringify(rows[0]), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+};
+
+export const DELETE: APIRoute = async ({ params }) => {
   const { id } = params;
   if (!id) return new Response(JSON.stringify({ error: 'ID requerido' }), { status: 400 });
 
-  const admin = createAdminClient();
+  const rows = await sql`select imagen_url from productos where id = ${id} limit 1`;
+  const prev = rows[0] as { imagen_url: string | null } | undefined;
 
-  // Obtener la imagen antes de borrar para limpiar storage
-  const { data: prod } = await admin
-    .from('productos')
-    .select('imagen_url')
-    .eq('id', id)
-    .single();
+  await sql`delete from productos where id = ${id}`;
 
-  const { error } = await admin
-    .from('productos')
-    .delete()
-    .eq('id', id);
-
-  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-
-  // Intentar borrar la imagen del storage (no crítico si falla)
-  if (prod?.imagen_url) {
-    try {
-      const url = new URL(prod.imagen_url);
-      const parts = url.pathname.split('/productos/');
-      if (parts[1]) {
-        await admin.storage.from('productos').remove([parts[1]]);
-      }
-    } catch { /* ignorar */ }
+  // Si la imagen estaba en Vercel Blob, borrarla (no crítico si falla).
+  if (prev?.imagen_url && prev.imagen_url.includes('.public.blob.vercel-storage.com')) {
+    try { await blobDel(prev.imagen_url); } catch { /* ignore */ }
   }
 
   return new Response(JSON.stringify({ ok: true }), { status: 200 });

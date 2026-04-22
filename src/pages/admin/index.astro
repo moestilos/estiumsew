@@ -3,39 +3,47 @@
  * admin/index.astro – Dashboard del panel de administración
  */
 import AdminLayout from '@/layouts/AdminLayout.astro';
-import { createServerClient, createAdminClient } from '@/lib/supabase';
 import VisitsChart from '@/components/admin/VisitsChart';
+import { sql } from '@/lib/db';
 
-const supabase      = createServerClient(Astro.request, Astro.cookies);
-const adminClient   = createAdminClient();
-const { data: { user } } = await supabase.auth.getUser();
+const user = Astro.locals.user!;
 
 const hoy    = new Date(); hoy.setHours(0, 0, 0, 0);
 const hace30 = new Date(hoy); hace30.setDate(hace30.getDate() - 30);
 const ayer   = new Date(hoy); ayer.setDate(ayer.getDate() - 1);
 
 const [
-  { count: totalProductos },
-  { count: productosActivos },
-  { count: totalPedidos },
-  { count: pendientes },
-  { data: recientes },
-  { count: visitasHoy },
-  { count: visitasAyer },
-  { count: visitas30d },
+  stats,
+  recientes,
+  visHoy,
+  visAyer,
+  vis30d,
 ] = await Promise.all([
-  adminClient.from('productos').select('*', { count: 'exact', head: true }),
-  adminClient.from('productos').select('*', { count: 'exact', head: true }).eq('activo', true),
-  adminClient.from('pedidos').select('*', { count: 'exact', head: true }),
-  adminClient.from('pedidos').select('*', { count: 'exact', head: true }).eq('estado', 'pendiente'),
-  adminClient.from('pedidos')
-    .select('id, nombre_cliente, estado, creado_en')
-    .order('creado_en', { ascending: false })
-    .limit(5),
-  adminClient.from('visitas').select('*', { count: 'exact', head: true }).gte('creado_en', hoy.toISOString()),
-  adminClient.from('visitas').select('*', { count: 'exact', head: true }).gte('creado_en', ayer.toISOString()).lt('creado_en', hoy.toISOString()),
-  adminClient.from('visitas').select('*', { count: 'exact', head: true }).gte('creado_en', hace30.toISOString()),
+  sql`
+    select
+      (select count(*)::int from productos) as total_productos,
+      (select count(*)::int from productos where activo = true) as productos_activos,
+      (select count(*)::int from pedidos) as total_pedidos,
+      (select count(*)::int from pedidos where estado = 'pendiente') as pendientes
+  `,
+  sql`
+    select id, nombre_cliente, estado, creado_en
+    from pedidos order by creado_en desc limit 5
+  `,
+  sql`select count(*)::int as n from visitas where creado_en >= ${hoy.toISOString()}`,
+  sql`select count(*)::int as n from visitas where creado_en >= ${ayer.toISOString()} and creado_en < ${hoy.toISOString()}`,
+  sql`select count(*)::int as n from visitas where creado_en >= ${hace30.toISOString()}`,
 ]);
+
+const { total_productos, productos_activos, total_pedidos, pendientes } =
+  (stats as any[])[0] ?? { total_productos: 0, productos_activos: 0, total_pedidos: 0, pendientes: 0 };
+
+const totalProductos   = total_productos   as number;
+const productosActivos = productos_activos as number;
+const totalPedidos     = total_pedidos     as number;
+const visitasHoy       = (visHoy  as any[])[0]?.n ?? 0;
+const visitasAyer      = (visAyer as any[])[0]?.n ?? 0;
+const visitas30d       = (vis30d  as any[])[0]?.n ?? 0;
 
 function fmtDate(d: string) {
   return new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(d));
@@ -50,12 +58,12 @@ const estadoBadge: Record<string, { color: string; bg: string }> = {
   cancelado:  { color: '#7A6A62', bg: 'rgba(122,106,98,.12)'  },
 };
 
-const nombre = user?.user_metadata?.full_name?.split(' ')[0] ?? 'Fani';
+const nombre = (user.nombre ?? 'Fani').split(' ')[0];
 const hora   = new Date().getHours();
 const saludo = hora < 13 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buenas noches';
 ---
 
-<AdminLayout title="Dashboard · estiumsew" user={user!}>
+<AdminLayout title="Dashboard · estiumsew" user={user}>
   <div class="dash">
 
     <!-- Bienvenida -->
@@ -136,12 +144,12 @@ const saludo = hora < 13 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buena
       <div class="dash-section-head">
         <div>
           <h2>Últimas consultas</h2>
-          <p class="section-desc">Las {recientes?.length ?? 0} más recientes</p>
+          <p class="section-desc">Las {(recientes as any[])?.length ?? 0} más recientes</p>
         </div>
         <a href="/admin/pedidos" class="link-ver">Ver todas →</a>
       </div>
 
-      {(!recientes || recientes.length === 0) ? (
+      {(!recientes || (recientes as any[]).length === 0) ? (
         <div class="empty-state">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3">
             <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
@@ -150,7 +158,7 @@ const saludo = hora < 13 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buena
         </div>
       ) : (
         <div class="recientes">
-          {recientes.map(p => (
+          {(recientes as any[]).map(p => (
             <div class="reciente-row">
               <div class="rec-avatar">
                 {p.nombre_cliente[0].toUpperCase()}
@@ -232,7 +240,6 @@ const saludo = hora < 13 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buena
 <style>
   .dash { display: flex; flex-direction: column; gap: 24px; }
 
-  /* Bienvenida */
   .dash-welcome {
     display: flex; justify-content: space-between; align-items: flex-start;
     flex-wrap: wrap; gap: 16px; padding-bottom: 8px;
@@ -249,7 +256,6 @@ const saludo = hora < 13 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buena
   }
   .btn-cta:hover { background: #A8705C; transform: translateY(-2px); }
 
-  /* Stats */
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -291,7 +297,6 @@ const saludo = hora < 13 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buena
   .stat-sub   { font-size: .68rem; color: #7A6A62; margin-top: 8px; }
   .stat-alert-sub { color: #E8A87C; }
 
-  /* Secciones */
   .dash-section {
     background: #241e1a;
     border: 1px solid rgba(180,130,105,.15);
@@ -314,7 +319,6 @@ const saludo = hora < 13 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buena
     padding: 32px 0; color: #7A6A62; font-size: .82rem; text-align: center;
   }
 
-  /* Recientes */
   .recientes { display: flex; flex-direction: column; gap: 2px; }
   .reciente-row {
     display: flex; align-items: center; gap: 14px;
@@ -336,7 +340,6 @@ const saludo = hora < 13 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buena
     padding: 4px 10px; border-radius: 20px; white-space: nowrap;
   }
 
-  /* Quick actions */
   .quick-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-top: 16px; }
   @media (max-width: 600px) { .quick-grid { grid-template-columns: 1fr; } }
   .quick-card {

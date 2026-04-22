@@ -1,15 +1,12 @@
 ---
 /**
- * login.astro – Página de login con Google OAuth (vía Supabase)
+ * login.astro — email + password
  * Redirige a /admin si ya hay sesión activa
  */
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import { createServerClient } from '@/lib/supabase';
+import { getAdminFromCookies } from '@/lib/auth';
 
-const supabase = createServerClient(Astro.request, Astro.cookies);
-const { data: { user } } = await supabase.auth.getUser();
-
-// Si ya está autenticado → admin
+const user = await getAdminFromCookies(Astro.cookies);
 if (user) return Astro.redirect('/admin');
 
 const redirectTo = Astro.url.searchParams.get('redirect') ?? '/admin';
@@ -18,7 +15,6 @@ const error      = Astro.url.searchParams.get('error');
 
 <BaseLayout title="Acceder · estiumsew">
   <div class="login-wrap">
-    <!-- Logo -->
     <a href="/" class="login-logo">
       <svg viewBox="0 0 180 40" fill="none">
         <line x1="6" y1="8" x2="6" y2="32" stroke="#C9907A" stroke-width="1.5" stroke-linecap="round"/>
@@ -37,21 +33,24 @@ const error      = Astro.url.searchParams.get('error');
       <p class="login-sub">Inicia sesión para gestionar tu tienda</p>
 
       {error === 'no-autorizado' && (
-        <div class="login-error">
-          Tu cuenta no tiene permisos de administrador. Contacta con el desarrollador.
-        </div>
+        <div class="login-error">Tu cuenta no tiene permisos de administrador.</div>
+      )}
+      {error === 'credentials' && (
+        <div class="login-error">Email o contraseña incorrectos.</div>
       )}
 
-      <!-- Botón Google OAuth -->
-      <button class="btn-google" id="btn-google">
-        <svg viewBox="0 0 24 24" width="20" height="20">
-          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-        </svg>
-        Continuar con Google
-      </button>
+      <form method="POST" action="/api/auth/login">
+        <input type="hidden" name="redirect" value={redirectTo} />
+        <label class="field">
+          <span>Email</span>
+          <input name="email" type="email" required autocomplete="email" />
+        </label>
+        <label class="field">
+          <span>Contraseña</span>
+          <input name="password" type="password" required autocomplete="current-password" />
+        </label>
+        <button type="submit" class="btn-login">Entrar</button>
+      </form>
 
       <p class="login-note">Solo Fani puede acceder al panel de admin.</p>
     </div>
@@ -59,37 +58,6 @@ const error      = Astro.url.searchParams.get('error');
     <a href="/" class="login-back">← Volver a la tienda</a>
   </div>
 </BaseLayout>
-
-<!-- Inicializar Supabase client y disparar OAuth -->
-<script>
-  import { createBrowserClient } from '@supabase/ssr';
-
-  const supabase = createBrowserClient(
-    import.meta.env.PUBLIC_SUPABASE_URL,
-    import.meta.env.PUBLIC_SUPABASE_ANON_KEY
-  );
-
-  const btn = document.getElementById('btn-google');
-  const params = new URLSearchParams(window.location.search);
-  const redirectTo = params.get('redirect') ?? '/admin';
-
-  btn?.addEventListener('click', async () => {
-    btn.textContent = 'Redirigiendo…';
-    btn.setAttribute('disabled', 'true');
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback?redirect=${redirectTo}`,
-      },
-    });
-
-    if (error) {
-      btn.textContent = 'Error: ' + error.message;
-      btn.removeAttribute('disabled');
-    }
-  });
-</script>
 
 <style>
   .login-wrap {
@@ -125,20 +93,31 @@ const error      = Astro.url.searchParams.get('error');
     margin-bottom: 20px; text-align: left;
   }
 
-  .btn-google {
-    width: 100%; padding: 14px 24px;
+  form { display: flex; flex-direction: column; gap: 14px; text-align: left; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field span { font-size: .72rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--txt-m); }
+  .field input {
+    padding: 12px 14px;
     border: 1.5px solid var(--linen);
-    border-radius: 12px;
+    border-radius: 10px;
     background: var(--white);
-    display: flex; align-items: center; justify-content: center; gap: 12px;
-    font-size: .88rem; font-weight: 500; color: var(--txt);
-    cursor: pointer; transition: all .22s;
-    margin-bottom: 20px;
+    font-size: .9rem; color: var(--txt);
+    outline: none;
+    transition: border-color .18s;
   }
-  .btn-google:hover { border-color: var(--rose); box-shadow: 0 4px 16px rgba(0,0,0,.08); }
-  .btn-google:disabled { opacity: .6; cursor: not-allowed; }
+  .field input:focus { border-color: var(--rose); }
 
-  .login-note { font-size: .73rem; color: var(--txt-l); }
+  .btn-login {
+    margin-top: 8px;
+    padding: 14px 24px;
+    border: none; border-radius: 12px;
+    background: var(--rose, #C9907A); color: #fff;
+    font-size: .88rem; font-weight: 500;
+    cursor: pointer; transition: background .2s;
+  }
+  .btn-login:hover { background: #A8705C; }
+
+  .login-note { font-size: .73rem; color: var(--txt-l); margin-top: 20px; }
   .login-back { font-size: .8rem; color: var(--txt-m); text-decoration: none; transition: color .2s; }
   .login-back:hover { color: var(--rose); }
 </style>

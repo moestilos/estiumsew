@@ -3,9 +3,9 @@
  * AdminLayout – Layout del panel de administración
  * Sidebar moderno con iconos SVG, diseño oscuro elegante.
  */
-import type { User } from '@supabase/supabase-js';
+import type { AdminUser } from '@/lib/auth';
 
-interface Props { title?: string; user: User; }
+interface Props { title?: string; user: AdminUser; }
 const { title = 'Admin · estiumsew', user } = Astro.props;
 const path = Astro.url.pathname;
 
@@ -40,8 +40,8 @@ function isActive(href: string, exact: boolean) {
   return exact ? path === href : path.startsWith(href);
 }
 
-const avatar = user.user_metadata?.avatar_url;
-const nombre = user.user_metadata?.full_name ?? user.email ?? 'Admin';
+const avatar = user.avatar_url;
+const nombre = user.nombre ?? user.email ?? 'Admin';
 const inicial = nombre[0].toUpperCase();
 ---
 <!DOCTYPE html>
